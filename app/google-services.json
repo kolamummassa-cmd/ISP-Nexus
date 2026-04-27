@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "453605536314",
+    "project_id": "isp-nexus-1496a",
+    "storage_bucket": "isp-nexus-1496a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:453605536314:android:3476df8b120f1fa6a97b03",
+        "android_client_info": {
+          "package_name": "com.example.ispnexus"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAaAvfO7ZfNWwjJQaioog4XsNAjGnN6dUE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
