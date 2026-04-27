@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.PendingActions
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -25,19 +26,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ispnexus.R
+import com.example.ispnexus.viewmodels.AuthViewModel
 import java.util.Calendar
-
-// ─────────────────────────────────────────────
-// Corporate Theme Colors
-// ─────────────────────────────────────────────
 
 val CorporateBlue = Color(0xFF0D47A1)
 val LightBackground = Color(0xFFF4F6F8)
-
-// ─────────────────────────────────────────────
-// Data Models
-// ─────────────────────────────────────────────
 
 @Immutable
 data class DashboardCardData(
@@ -58,21 +53,13 @@ data class StatItem(
     val valueColor: Color? = null
 )
 
-// ─────────────────────────────────────────────
-// Greeting Helper
-// ─────────────────────────────────────────────
-
 private fun greeting(): String {
     return when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
-        in 0..11 -> "Good morning, Admin"
+        in 0..11  -> "Good morning, Admin"
         in 12..16 -> "Good afternoon, Admin"
-        else -> "Good evening, Admin"
+        else      -> "Good evening, Admin"
     }
 }
-
-// ─────────────────────────────────────────────
-// Main Screen
-// ─────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,45 +69,46 @@ fun SuperAdminScreen(
     approvedCount: Int = 134,
     onPendingClick: () -> Unit = {},
     onApprovedClick: () -> Unit = {},
-    onAnalyticsClick: () -> Unit = {}
+    onAnalyticsClick: () -> Unit = {},
+    onLogout: () -> Unit = {},
+    viewModel: AuthViewModel = viewModel()
 ) {
-
-    val stats = remember {
+    val stats = remember(totalIsps, pendingCount, approvedCount) {
         listOf(
             StatItem("Total ISPs", "$totalIsps"),
-            StatItem("Pending", "$pendingCount", Color(0xFFB7791F)),
-            StatItem("Approved", "$approvedCount", Color(0xFF2E7D32))
+            StatItem("Pending",    "$pendingCount",  Color(0xFFB7791F)),
+            StatItem("Approved",   "$approvedCount", Color(0xFF2E7D32))
         )
     }
 
-    val cards = remember {
+    val cards = remember(pendingCount, approvedCount, onPendingClick, onApprovedClick, onAnalyticsClick) {
         listOf(
             DashboardCardData(
-                title = "Pending Companies",
-                subtitle = "Approve or reject registrations",
-                icon = Icons.Default.PendingActions,
-                iconTint = Color(0xFFB7791F),
+                title          = "Pending Companies",
+                subtitle       = "Approve or reject registrations",
+                icon           = Icons.Default.PendingActions,
+                iconTint       = Color(0xFFB7791F),
                 iconBackground = Color(0xFFFFF4E5),
-                badge = if (pendingCount > 0) "$pendingCount new" else null,
-                badgeIsAlert = true,
-                onClick = onPendingClick
+                badge          = if (pendingCount > 0) "$pendingCount new" else null,
+                badgeIsAlert   = true,
+                onClick        = onPendingClick
             ),
             DashboardCardData(
-                title = "Approved Companies",
-                subtitle = "Manage verified ISPs",
-                icon = Icons.Default.Business,
-                iconTint = CorporateBlue,
+                title          = "Approved Companies",
+                subtitle       = "Manage verified ISPs",
+                icon           = Icons.Default.Business,
+                iconTint       = CorporateBlue,
                 iconBackground = Color(0xFFE3F2FD),
-                badge = "$approvedCount",
-                onClick = onApprovedClick
+                badge          = "$approvedCount",
+                onClick        = onApprovedClick
             ),
             DashboardCardData(
-                title = "System Analytics",
-                subtitle = "View revenue and usage reports",
-                icon = Icons.Default.Analytics,
-                iconTint = CorporateBlue,
+                title          = "System Analytics",
+                subtitle       = "View revenue and usage reports",
+                icon           = Icons.Default.Analytics,
+                iconTint       = CorporateBlue,
                 iconBackground = Color(0xFFE8EAF6),
-                onClick = onAnalyticsClick
+                onClick        = onAnalyticsClick
             )
         )
     }
@@ -131,19 +119,17 @@ fun SuperAdminScreen(
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = CorporateBlue,
-                    titleContentColor = Color.White
+                    titleContentColor = Color.White,
+                    actionIconContentColor = Color.White
                 ),
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-
                         Image(
                             painter = painterResource(id = R.drawable.isp_nexus),
                             contentDescription = "ISP Nexus Logo",
                             modifier = Modifier.size(36.dp)
                         )
-
                         Spacer(modifier = Modifier.width(12.dp))
-
                         Column {
                             Text(
                                 text = "ISP Nexus",
@@ -155,6 +141,17 @@ fun SuperAdminScreen(
                                 color = Color.White.copy(alpha = 0.85f)
                             )
                         }
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        viewModel.logout()
+                        onLogout()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.ExitToApp,
+                            contentDescription = "Logout"
+                        )
                     }
                 }
             )
@@ -174,22 +171,22 @@ fun SuperAdminScreen(
 
             item {
                 Text(
-                    text = "Management",
+                    text  = "Management",
                     style = MaterialTheme.typography.labelMedium,
                     color = Color.Gray
                 )
             }
 
-            items(cards) { card ->
+            items(cards, key = { it.title }) { card ->
                 DashboardCard(card)
             }
 
             item {
                 Text(
-                    text = "ISP Nexus • System Status: Online",
-                    style = MaterialTheme.typography.labelSmall,
+                    text      = "ISP Nexus • System Status: Online",
+                    style     = MaterialTheme.typography.labelSmall,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier
+                    modifier  = Modifier
                         .fillMaxWidth()
                         .padding(top = 12.dp),
                     color = Color.Gray
@@ -198,10 +195,6 @@ fun SuperAdminScreen(
         }
     }
 }
-
-// ─────────────────────────────────────────────
-// Stat Strip
-// ─────────────────────────────────────────────
 
 @Composable
 fun StatStrip(stats: List<StatItem>) {
@@ -216,49 +209,44 @@ fun StatStrip(stats: List<StatItem>) {
 fun StatCard(stat: StatItem, modifier: Modifier) {
     ElevatedCard(
         modifier = modifier,
-        shape = RoundedCornerShape(14.dp)
+        shape    = RoundedCornerShape(14.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Text(stat.label, fontSize = 12.sp, color = Color.Gray)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 stat.value,
-                fontSize = 22.sp,
+                fontSize   = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = stat.valueColor ?: Color.Black
+                color      = stat.valueColor ?: Color.Black
             )
         }
     }
 }
 
-// ─────────────────────────────────────────────
-// Dashboard Card
-// ─────────────────────────────────────────────
-
 @Composable
 fun DashboardCard(card: DashboardCardData) {
     ElevatedCard(
-        onClick = card.onClick,
-        shape = RoundedCornerShape(18.dp),
+        onClick  = card.onClick,
+        shape    = RoundedCornerShape(18.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(18.dp),
+            modifier          = Modifier.padding(18.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Box(
-                modifier = Modifier
+                modifier         = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
                     .background(card.iconBackground),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = card.icon,
+                    imageVector        = card.icon,
                     contentDescription = null,
-                    tint = card.iconTint,
-                    modifier = Modifier.size(24.dp)
+                    tint               = card.iconTint,
+                    modifier           = Modifier.size(24.dp)
                 )
             }
 
@@ -269,7 +257,7 @@ fun DashboardCard(card: DashboardCardData) {
                 Text(
                     card.subtitle,
                     fontSize = 13.sp,
-                    color = Color.Gray
+                    color    = Color.Gray
                 )
             }
 
@@ -279,10 +267,11 @@ fun DashboardCard(card: DashboardCardData) {
                     color = if (card.badgeIsAlert) Color(0xFFFFE0B2) else Color(0xFFC8E6C9)
                 ) {
                     Text(
-                        text = it,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium
+                        text       = it,
+                        modifier   = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        fontSize   = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color      = if (card.badgeIsAlert) Color(0xFFB7791F) else Color(0xFF2E7D32)
                     )
                 }
             }

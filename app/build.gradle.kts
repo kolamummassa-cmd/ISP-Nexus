@@ -6,11 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.ispnexus"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 36   // ← fixed: compileSdk must be a plain Int, not a block
 
     defaultConfig {
         applicationId = "com.example.ispnexus"
@@ -31,16 +27,27 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+
+
     buildFeatures {
         compose = true
     }
 }
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+    }
+}
 
 dependencies {
+
+    // ── Compose BOM ──────────────────────────────────────────────────────────
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
@@ -49,8 +56,23 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.database)
+
+    // ── Firebase BOM (manages all Firebase versions automatically) ───────────
+    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))  // ← Kotlin DSL uses double quotes + ()
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")          // ← fixes .toObject red error
+    implementation("com.google.firebase:firebase-database-ktx")
+
+    // ── Coroutines (needed for .await() on Firebase tasks) ───────────────────
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+
+    // ── Navigation ───────────────────────────────────────────────────────────
+    implementation("androidx.navigation:navigation-compose:2.8.4")
+
+    // ── Material Icons ───────────────────────────────────────────────────────
+    implementation("androidx.compose.material:material-icons-extended")
+
+    // ── Testing ──────────────────────────────────────────────────────────────
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
@@ -58,6 +80,4 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
-    implementation("androidx.navigation:navigation-compose:2.8.4")
-    implementation("androidx.compose.material:material-icons-extended")
 }
