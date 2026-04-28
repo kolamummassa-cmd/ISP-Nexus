@@ -58,10 +58,12 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
     // ── Firebase BOM (manages all Firebase versions automatically) ───────────
-    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))  // ← Kotlin DSL uses double quotes + ()
+    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
     implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-firestore-ktx")          // ← fixes .toObject red error
+    implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-database-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")           // ← ADD THIS
+    implementation("io.coil-kt:coil-compose:2.6.0")                      // ← ADD THIS (for logo preview)
 
     // ── Coroutines (needed for .await() on Firebase tasks) ───────────────────
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")

@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.ispnexus.ui.theme.screens.SuperAdminScreen
 import com.example.ispnexus.ui.theme.screens.auth.LoginScreen
+import com.example.ispnexus.ui.theme.screens.auth.RegisterCompanyScreen
 
 @Composable
 fun AppNavHost() {
@@ -18,12 +19,11 @@ fun AppNavHost() {
         startDestination = "login"
     ) {
 
-        // ── Login ─────────────────────────────────────────────────────────────
         composable("login") {
             LoginScreen(
                 onNavigateToSuperAdmin = {
                     navController.navigate("super_admin") {
-                        popUpTo("login") { inclusive = true } // ← clears login from back stack
+                        popUpTo("login") { inclusive = true }
                     }
                 },
                 onNavigateToAdmin = {
@@ -42,7 +42,19 @@ fun AppNavHost() {
             )
         }
 
-        // ── Super Admin ───────────────────────────────────────────────────────
+        composable("register") {
+            RegisterCompanyScreen(
+                onBackToLogin = {
+                    navController.popBackStack()
+                },
+                onRegistrationSuccess = {
+                    navController.navigate("login") {
+                        popUpTo("register") { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable("super_admin") {
             SuperAdminScreen(
                 onPendingClick   = { navController.navigate("pending_companies") },
@@ -50,28 +62,20 @@ fun AppNavHost() {
                 onAnalyticsClick = { navController.navigate("system_analytics") },
                 onLogout         = {
                     navController.navigate("login") {
-                        popUpTo("super_admin") { inclusive = true } // ← clears dashboard from back stack
+                        popUpTo("super_admin") { inclusive = true }
                     }
                 }
             )
         }
 
-        // ── Admin ─────────────────────────────────────────────────────────────
         composable("admin") {
             Text("Admin Dashboard") // TODO: replace with AdminScreen()
         }
 
-        // ── User ──────────────────────────────────────────────────────────────
         composable("user") {
             Text("User Dashboard") // TODO: replace with UserScreen()
         }
 
-        // ── Register ──────────────────────────────────────────────────────────
-        composable("register") {
-            Text("Register Screen") // TODO: replace with RegisterScreen()
-        }
-
-        // ── Super Admin Sub-screens ───────────────────────────────────────────
         composable("pending_companies") {
             Text("Pending Companies") // TODO: replace with PendingCompaniesScreen()
         }
