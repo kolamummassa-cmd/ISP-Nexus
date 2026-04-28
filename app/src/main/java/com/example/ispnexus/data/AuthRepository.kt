@@ -1,5 +1,6 @@
 package com.example.ispnexus.data
 
+import com.example.ispnexus.models.Company
 import com.example.ispnexus.models.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -78,7 +79,7 @@ class AuthRepository {
                 "taxPin"             to taxPin,
                 "phoneNumber"        to phoneNumber,
                 "logoUrl"            to (logoDownloadUrl ?: ""),
-                "status"             to "pending",      // super admin approves
+                "status"             to "PENDING",      // super admin approves
                 "adminUid"           to uid,
                 "createdAt"          to System.currentTimeMillis()
             )
@@ -90,7 +91,7 @@ class AuthRepository {
                 "uid"       to uid,
                 "email"     to email,
                 "name"      to adminName,
-                "role"      to "admin",
+                "role"      to "ADMIN",
                 "companyId" to uid,
                 "createdAt" to System.currentTimeMillis()
             )
@@ -115,4 +116,37 @@ class AuthRepository {
     fun getCurrentUserId(): String? = auth.currentUser?.uid
 
     fun isLoggedIn(): Boolean = auth.currentUser != null
+
+//    suspend fun getPendingCompanies(): Result<List<Company>> {
+//        return try {
+//            val snapshot = db.collection("companies")
+//                .whereEqualTo("status", "PENDING")
+//                .get()
+//                .await()
+//
+//            val companies = snapshot.documents.mapNotNull {
+//                it.toObject(Company::class.java)
+//            }
+//
+//            Result.success(companies)
+//
+//        } catch (e: Exception) {
+//            Result.failure(e)
+//        }
+//    }
+//    // ── Approve Company ────────────────────────────────────────────────────
+//
+//    suspend fun approveCompany(companyId: String): Result<Unit> {
+//        return try {
+//            db.collection("companies")
+//                .document(companyId)
+//                .update("status", "ACTIVE")
+//                .await()
+//
+//            Result.success(Unit)
+//
+//        } catch (e: Exception) {
+//            Result.failure(e)
+//        }
+//    }
 }

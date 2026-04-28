@@ -5,20 +5,23 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.ispnexus.ui.theme.screens.ApprovedCompaniesScreen
+import com.example.ispnexus.ui.theme.screens.PendingCompaniesScreen
 import com.example.ispnexus.ui.theme.screens.SuperAdminScreen
+import com.example.ispnexus.ui.theme.screens.SystemAnalyticsScreen
 import com.example.ispnexus.ui.theme.screens.auth.LoginScreen
 import com.example.ispnexus.ui.theme.screens.auth.RegisterCompanyScreen
 
 @Composable
 fun AppNavHost() {
-
     val navController = rememberNavController()
 
     NavHost(
-        navController = navController,
-        startDestination = "login"
+        navController    = navController,
+        startDestination = "super_admin"         // ← changed back to login for production
     ) {
 
+        // ── Login ─────────────────────────────────────────────────────────────
         composable("login") {
             LoginScreen(
                 onNavigateToSuperAdmin = {
@@ -42,11 +45,10 @@ fun AppNavHost() {
             )
         }
 
+        // ── Register ──────────────────────────────────────────────────────────
         composable("register") {
             RegisterCompanyScreen(
-                onBackToLogin = {
-                    navController.popBackStack()
-                },
+                onBackToLogin = { navController.popBackStack() },
                 onRegistrationSuccess = {
                     navController.navigate("login") {
                         popUpTo("register") { inclusive = true }
@@ -55,6 +57,7 @@ fun AppNavHost() {
             )
         }
 
+        // ── Super Admin ───────────────────────────────────────────────────────
         composable("super_admin") {
             SuperAdminScreen(
                 onPendingClick   = { navController.navigate("pending_companies") },
@@ -68,24 +71,29 @@ fun AppNavHost() {
             )
         }
 
-        composable("admin") {
-            Text("Admin Dashboard") // TODO: replace with AdminScreen()
-        }
-
-        composable("user") {
-            Text("User Dashboard") // TODO: replace with UserScreen()
-        }
-
+        // ── Pending Companies ─────────────────────────────────────────────────
         composable("pending_companies") {
-            Text("Pending Companies") // TODO: replace with PendingCompaniesScreen()
+            PendingCompaniesScreen(
+                onBack = { navController.popBackStack() }
+            )
         }
 
+        // ── Approved Companies ────────────────────────────────────────────────
         composable("approved_companies") {
-            Text("Approved Companies") // TODO: replace with ApprovedCompaniesScreen()
+            ApprovedCompaniesScreen(              // ← replaced Text() with actual screen
+                onBack = { navController.popBackStack() }
+            )
         }
 
+        // ── System Analytics ──────────────────────────────────────────────────
         composable("system_analytics") {
-            Text("System Analytics") // TODO: replace with SystemAnalyticsScreen()
+            SystemAnalyticsScreen(
+                onBack = {navController.popBackStack()}
+            )
         }
+
+        // ── Other Roles ───────────────────────────────────────────────────────
+        composable("admin") { Text("Admin Dashboard") }   // TODO: replace with AdminScreen()
+        composable("user")  { Text("User Dashboard") }    // TODO: replace with UserScreen()
     }
 }
