@@ -56,6 +56,7 @@ private fun formatKsh(amount: Double): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(
+    companyId: String,
     onLogout: () -> Unit = {},
     onInstitutions: () -> Unit = {},
     onSubscriptions: () -> Unit = {},
@@ -67,6 +68,10 @@ fun AdminDashboardScreen(
     viewModel: AdminViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
+
+    LaunchedEffect(companyId) {
+        viewModel.loadDashboard(companyId)
+    }
 
     Scaffold(
         containerColor = PageBg,
@@ -148,9 +153,13 @@ fun AdminDashboardScreen(
                         Text(s.message, color = RedColor, textAlign = TextAlign.Center)
                         Spacer(modifier = Modifier.height(12.dp))
                         Button(
-                            onClick = { viewModel.loadDashboard() },
-                            colors  = ButtonDefaults.buttonColors(containerColor = CorporateBlue)
-                        ) { Text("Retry") }
+                            onClick = { viewModel.loadDashboard(companyId) },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = CorporateBlue
+                            )
+                        ) {
+                            Text("Retry")
+                        }
                     }
                 }
             }
@@ -196,7 +205,7 @@ private fun DashboardContent(
         item {
             Column {
                 Text(
-                    text       = "Welcome, Admin 👋",
+                    text       = "Welcome, Admin",
                     fontSize   = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color      = Color(0xFF1A1A1A)
@@ -218,7 +227,7 @@ private fun DashboardContent(
                 StatMetricCard(
                     label    = "Total Institutions",
                     value    = data.totalInstitutions.toString(),
-                    sub      = "+12 this month",
+                    sub      = "",
                     subColor = ActiveGreen,
                     iconBg   = Color(0xFFEDE7F6),
                     iconTint = PurpleColor,
@@ -228,7 +237,7 @@ private fun DashboardContent(
                 StatMetricCard(
                     label    = "Active Subscriptions",
                     value    = data.activeSubscriptions.toString(),
-                    sub      = "+18 this month",
+                    sub      = "",
                     subColor = ActiveGreen,
                     iconBg   = Color(0xFFE8F5E9),
                     iconTint = ActiveGreen,
@@ -246,7 +255,7 @@ private fun DashboardContent(
                 StatMetricCard(
                     label    = "Pending Payments",
                     value    = formatKsh(data.pendingPayments),
-                    sub      = "↑ 8.5% from last month",
+                    sub      = "",
                     subColor = RedColor,
                     iconBg   = Color(0xFFFFF8E1),
                     iconTint = AmberColor,
@@ -256,7 +265,7 @@ private fun DashboardContent(
                 StatMetricCard(
                     label    = "Monthly Revenue",
                     value    = formatKsh(data.monthlyRevenue),
-                    sub      = "↑ 15.3% from last month",
+                    sub      = "",
                     subColor = ActiveGreen,
                     iconBg   = Color(0xFFE3F2FD),
                     iconTint = CorporateBlue,
@@ -275,7 +284,7 @@ private fun DashboardContent(
                 StatMetricCard(
                     label    = "Suspended Institutions",
                     value    = data.suspendedInstitutions.toString(),
-                    sub      = "↑ 2 this month",
+                    sub      = "",
                     subColor = RedColor,
                     iconBg   = Color(0xFFFFEBEE),
                     iconTint = RedColor,
@@ -285,7 +294,7 @@ private fun DashboardContent(
                 StatMetricCard(
                     label    = "Active Technicians",
                     value    = data.activeTechnicians.toString(),
-                    sub      = "↑ 3 this month",
+                    sub      = "",
                     subColor = ActiveGreen,
                     iconBg   = Color(0xFFE8F5E9),
                     iconTint = ActiveGreen,
@@ -367,7 +376,7 @@ private fun DashboardContent(
         // ── Footer ────────────────────────────────────────────────────────
         item {
             Text(
-                text      = "© 2024 ISP-NEXUS. All rights reserved.",
+                text      = "© 2026 ISP-NEXUS. All rights reserved.",
                 fontSize  = 11.sp,
                 color     = Color(0xFF9CA3AF),
                 textAlign = TextAlign.Center,
@@ -745,7 +754,7 @@ private fun DefaulterCard(rate: Float) {
                 )
             }
             Text(
-                text     = "↓ 1.2% from last month",
+                text     = "",
                 fontSize = 11.sp,
                 color    = ActiveGreen,
                 fontWeight = FontWeight.Medium

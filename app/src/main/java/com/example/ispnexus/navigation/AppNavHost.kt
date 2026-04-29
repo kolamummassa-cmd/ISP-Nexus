@@ -1,10 +1,10 @@
 package com.example.ispnexus.navigation
 
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.ispnexus.ui.theme.screens.AdminDashboardScreen
 import com.example.ispnexus.ui.theme.screens.ApprovedCompaniesScreen
 import com.example.ispnexus.ui.theme.screens.PendingCompaniesScreen
 import com.example.ispnexus.ui.theme.screens.SuperAdminScreen
@@ -14,14 +14,15 @@ import com.example.ispnexus.ui.theme.screens.auth.RegisterCompanyScreen
 
 @Composable
 fun AppNavHost() {
+
     val navController = rememberNavController()
 
     NavHost(
-        navController    = navController,
-        startDestination = "super_admin"         // ← changed back to login for production
+        navController = navController,
+        startDestination = "admin"   // change to "login" for production
     ) {
 
-        // ── Login ─────────────────────────────────────────────────────────────
+        // ── Login ─────────────────────────
         composable("login") {
             LoginScreen(
                 onNavigateToSuperAdmin = {
@@ -45,7 +46,7 @@ fun AppNavHost() {
             )
         }
 
-        // ── Register ──────────────────────────────────────────────────────────
+        // ── Register ──────────────────────
         composable("register") {
             RegisterCompanyScreen(
                 onBackToLogin = { navController.popBackStack() },
@@ -57,13 +58,13 @@ fun AppNavHost() {
             )
         }
 
-        // ── Super Admin ───────────────────────────────────────────────────────
+        // ── Super Admin ───────────────────
         composable("super_admin") {
             SuperAdminScreen(
-                onPendingClick   = { navController.navigate("pending_companies") },
-                onApprovedClick  = { navController.navigate("approved_companies") },
+                onPendingClick = { navController.navigate("pending_companies") },
+                onApprovedClick = { navController.navigate("approved_companies") },
                 onAnalyticsClick = { navController.navigate("system_analytics") },
-                onLogout         = {
+                onLogout = {
                     navController.navigate("login") {
                         popUpTo("super_admin") { inclusive = true }
                     }
@@ -71,29 +72,38 @@ fun AppNavHost() {
             )
         }
 
-        // ── Pending Companies ─────────────────────────────────────────────────
+        // ── Pending Companies ─────────────
         composable("pending_companies") {
             PendingCompaniesScreen(
                 onBack = { navController.popBackStack() }
             )
         }
 
-        // ── Approved Companies ────────────────────────────────────────────────
+        // ── Approved Companies ────────────
         composable("approved_companies") {
-            ApprovedCompaniesScreen(              // ← replaced Text() with actual screen
+            ApprovedCompaniesScreen(
                 onBack = { navController.popBackStack() }
             )
         }
 
-        // ── System Analytics ──────────────────────────────────────────────────
+        // ── System Analytics ──────────────
         composable("system_analytics") {
             SystemAnalyticsScreen(
-                onBack = {navController.popBackStack()}
+                onBack = { navController.popBackStack() }
             )
         }
 
-        // ── Other Roles ───────────────────────────────────────────────────────
-        composable("admin") { Text("Admin Dashboard") }   // TODO: replace with AdminScreen()
-        composable("user")  { Text("User Dashboard") }    // TODO: replace with UserScreen()
+        // ── Admin Dashboard ───────────────
+        composable("admin") {
+            AdminDashboardScreen(
+                companyId = "test_company_id",
+                onLogout = {
+                    navController.navigate("login") {
+                        popUpTo("admin") { inclusive = true }
+                    }
+                }
+            )
+        }
+
     }
 }
