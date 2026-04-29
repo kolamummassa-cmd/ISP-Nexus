@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,7 +59,7 @@ private fun greeting(): String {
     return when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
         in 0..11  -> "Good morning, Super Admin"
         in 12..16 -> "Good afternoon, Super Admin"
-        else      -> "Good evening, Super Admin"   // ← fixed missing space
+        else      -> "Good evening, Super Admin"
     }
 }
 
@@ -91,9 +90,9 @@ fun SuperAdminTopBar(onLogout: () -> Unit) {
                         color      = Color.White
                     )
                     Text(
-                        text  = greeting(),
+                        text     = greeting(),
                         fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.85f)
+                        color    = Color.White.copy(alpha = 0.85f)
                     )
                 }
             }
@@ -115,51 +114,50 @@ fun SuperAdminTopBar(onLogout: () -> Unit) {
 @Composable
 fun SuperAdminScreen(
     onPendingClick: () -> Unit,
-    onApprovedClick: () -> Unit = {},   // ← wired to approved_companies screen
+    onApprovedClick: () -> Unit = {},
     onAnalyticsClick: () -> Unit = {},
     onLogout: () -> Unit,
     viewModel: SuperAdminViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel()
-) {
+) {                                                          // ← function opens here
+
     val pendingCount  by viewModel.pendingCount.collectAsState()
     val approvedCount by viewModel.approvedCount.collectAsState()
     val totalCount    = pendingCount + approvedCount
 
-    // ✅ remember keys include callbacks so list rebuilds when navigation changes
-    val cards = remember(pendingCount, approvedCount, onPendingClick, onApprovedClick, onAnalyticsClick) {
-        listOf(
-            DashboardCardData(
-                title          = "Pending Companies",
-                subtitle       = "Approve or reject registrations",
-                icon           = Icons.Default.PendingActions,
-                iconBackground = Color(0xFFFFF4E5),
-                iconTint       = Color(0xFFB7791F),
-                badge          = if (pendingCount > 0) "$pendingCount new" else null,
-                badgeIsAlert   = true,
-                onClick        = onPendingClick
-            ),
-            DashboardCardData(
-                title          = "Approved Companies",
-                subtitle       = "Manage verified ISPs",
-                icon           = Icons.Default.Business,
-                iconBackground = Color(0xFFE8F5E9),
-                iconTint       = Color(0xFF2E7D32),
-                badge          = "$approvedCount",
-                badgeIsAlert   = false,
-                onClick        = onApprovedClick  // ← now navigates to ApprovedCompaniesScreen
-            ),
-            DashboardCardData(
-                title          = "System Analytics",
-                subtitle       = "View revenue and usage reports",
-                icon           = Icons.Default.Analytics,
-                iconBackground = Color(0xFFE3F2FD),
-                iconTint       = CorporateBlue,
-                onClick        = onAnalyticsClick
-            )
+    // No remember() — list rebuilds on every recomposition so counts stay live
+    val cards = listOf(
+        DashboardCardData(
+            title          = "Pending Companies",
+            subtitle       = "Approve or reject registrations",
+            icon           = Icons.Default.PendingActions,
+            iconBackground = Color(0xFFFFF4E5),
+            iconTint       = Color(0xFFB7791F),
+            badge          = if (pendingCount > 0) "$pendingCount new" else null,
+            badgeIsAlert   = true,
+            onClick        = onPendingClick
+        ),
+        DashboardCardData(
+            title          = "Approved Companies",
+            subtitle       = "Manage verified ISPs",
+            icon           = Icons.Default.Business,
+            iconBackground = Color(0xFFE8F5E9),
+            iconTint       = Color(0xFF2E7D32),
+            badge          = "$approvedCount",
+            badgeIsAlert   = false,
+            onClick        = onApprovedClick
+        ),
+        DashboardCardData(
+            title          = "System Analytics",
+            subtitle       = "View revenue and usage reports",
+            icon           = Icons.Default.Analytics,
+            iconBackground = Color(0xFFE3F2FD),
+            iconTint       = CorporateBlue,
+            onClick        = onAnalyticsClick
         )
-    }
+    )
 
-    Scaffold(
+    Scaffold(                                                // ← Scaffold is INSIDE the function
         topBar         = { SuperAdminTopBar(onLogout = onLogout) },
         containerColor = PageBackground
     ) { padding ->
@@ -234,7 +232,7 @@ fun SuperAdminScreen(
             }
         }
     }
-}
+}                                                            // ← function closes here
 
 // ── Stat Card ─────────────────────────────────────────────────────────────────
 
@@ -291,8 +289,6 @@ private fun ActionCard(card: DashboardCardData) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
-            // Icon circle
             Box(
                 modifier         = Modifier
                     .size(50.dp)
@@ -310,7 +306,6 @@ private fun ActionCard(card: DashboardCardData) {
 
             Spacer(modifier = Modifier.width(14.dp))
 
-            // Title + subtitle
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text       = card.title,
@@ -326,7 +321,6 @@ private fun ActionCard(card: DashboardCardData) {
                 )
             }
 
-            // Badge
             card.badge?.let { label ->
                 Spacer(modifier = Modifier.width(8.dp))
                 Surface(

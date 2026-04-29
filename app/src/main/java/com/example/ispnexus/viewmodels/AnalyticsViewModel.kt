@@ -16,6 +16,7 @@ data class AnalyticsData(
     val activeCompanies: Int = 0,
     val pendingCompanies: Int = 0,
     val suspendedCompanies: Int = 0,
+    val rejectedCompanies: Int = 0,         // ← new
     val totalInstitutions: Int = 0,
     val totalSubscriptions: Int = 0,
     val growthRate: Float = 0f,
@@ -50,7 +51,6 @@ class AnalyticsViewModel : ViewModel() {
         viewModelScope.launch {
             _state.value = AnalyticsState.Loading
             try {
-                // Fetch all companies
                 val companiesSnapshot = db.collection("companies").get().await()
                 val allCompanies      = companiesSnapshot.documents
 
@@ -58,16 +58,15 @@ class AnalyticsViewModel : ViewModel() {
                 val active     = allCompanies.count { it.getString("status") == "approved" }
                 val pending    = allCompanies.count { it.getString("status") == "pending" }
                 val suspended  = allCompanies.count { it.getString("status") == "suspended" }
+                val rejected   = allCompanies.count { it.getString("status") == "rejected" }  // ← new
 
-                // Fetch institutions (separate collection — adjust if needed)
-                val institutionsSnapshot = db.collection("institutions").get().await()
-                val totalInstitutions    = institutionsSnapshot.size()
+                val institutionsSnapshot  = db.collection("institutions").get().await()
+                val totalInstitutions     = institutionsSnapshot.size()
 
-                // Fetch subscriptions
                 val subscriptionsSnapshot = db.collection("subscriptions").get().await()
                 val totalSubscriptions    = subscriptionsSnapshot.size()
 
-                // Build monthly growth from createdAt timestamps
+                // Build monthly growth
                 val monthlyMap = mutableMapOf<String, Int>()
                 val months     = listOf("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
 
@@ -86,7 +85,6 @@ class AnalyticsViewModel : ViewModel() {
                     }
                 }
 
-                // Build last 6 months in order
                 val cal         = java.util.Calendar.getInstance()
                 val last6Months = (5 downTo 0).map { offset ->
                     val c = java.util.Calendar.getInstance()
@@ -99,7 +97,6 @@ class AnalyticsViewModel : ViewModel() {
                     MonthStat(month, monthlyMap[month] ?: 0)
                 }
 
-                // Growth rate: compare last month vs previous month
                 val lastMonthCount = monthlyGrowth.getOrNull(5)?.count ?: 0
                 val prevMonthCount = monthlyGrowth.getOrNull(4)?.count ?: 0
                 val growthRate     = if (prevMonthCount > 0)
@@ -112,6 +109,7 @@ class AnalyticsViewModel : ViewModel() {
                         activeCompanies    = active,
                         pendingCompanies   = pending,
                         suspendedCompanies = suspended,
+                        rejectedCompanies  = rejected,      // ← new
                         totalInstitutions  = totalInstitutions,
                         totalSubscriptions = totalSubscriptions,
                         growthRate         = growthRate,

@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+// ── UI States ─────────────────────────────────────────────────────────────────
+
 sealed class CompanyListState {
     object Loading : CompanyListState()
     data class Success(val companies: List<Company>) : CompanyListState()
@@ -23,11 +25,13 @@ sealed class ActionState {
     data class Error(val message: String) : ActionState()
 }
 
+// ── ViewModel ─────────────────────────────────────────────────────────────────
+
 class SuperAdminViewModel(
     private val repository: CompanyRepository = CompanyRepository()
 ) : ViewModel() {
 
-    private val _pendingCompanies = MutableStateFlow<CompanyListState>(CompanyListState.Loading)
+    private val _pendingCompanies  = MutableStateFlow<CompanyListState>(CompanyListState.Loading)
     val pendingCompanies: StateFlow<CompanyListState> = _pendingCompanies.asStateFlow()
 
     private val _approvedCompanies = MutableStateFlow<CompanyListState>(CompanyListState.Loading)
@@ -36,27 +40,31 @@ class SuperAdminViewModel(
     private val _actionState = MutableStateFlow<ActionState>(ActionState.Idle)
     val actionState: StateFlow<ActionState> = _actionState.asStateFlow()
 
-    private val _pendingCount = MutableStateFlow(0)
+    private val _pendingCount  = MutableStateFlow(0)
     val pendingCount: StateFlow<Int> = _pendingCount.asStateFlow()
 
     private val _approvedCount = MutableStateFlow(0)
     val approvedCount: StateFlow<Int> = _approvedCount.asStateFlow()
 
+    private val _rejectedCount = MutableStateFlow(0)      // ← new
+    val rejectedCount: StateFlow<Int> = _rejectedCount.asStateFlow()
+
     init {
         loadPendingCompanies()
-        loadApprovedCompanies()   // ← runs on init so counts show immediately
+        loadApprovedCompanies()
+        loadRejectedCount()            // ← load on init
     }
+
+    // ── Load pending ──────────────────────────────────────────────────────────
 
     fun loadPendingCompanies() {
         viewModelScope.launch {
             _pendingCompanies.value = CompanyListState.Loading
             repository.getPendingCompanies().fold(
                 onSuccess = { companies ->
-                    _pendingCount.value = companies.size
+                    _pendingCount.value     = companies.size
                     _pendingCompanies.value = if (companies.isEmpty())
-                        CompanyListState.Empty
-                    else
-                        CompanyListState.Success(companies)
+                        CompanyListState.Empty else CompanyListState.Success(companies)
                 },
                 onFailure = { error ->
                     _pendingCompanies.value = CompanyListState.Error(
@@ -67,7 +75,8 @@ class SuperAdminViewModel(
         }
     }
 
-    // ✅ Now public — ApprovedCompaniesScreen refresh button can call this
+    // ── Load approved ─────────────────────────────────────────────────────────
+
     fun loadApprovedCompanies() {
         viewModelScope.launch {
             _approvedCompanies.value = CompanyListState.Loading
@@ -75,9 +84,7 @@ class SuperAdminViewModel(
                 onSuccess = { companies ->
                     _approvedCount.value     = companies.size
                     _approvedCompanies.value = if (companies.isEmpty())
-                        CompanyListState.Empty
-                    else
-                        CompanyListState.Success(companies)
+                        CompanyListState.Empty else CompanyListState.Success(companies)
                 },
                 onFailure = { error ->
                     _approvedCompanies.value = CompanyListState.Error(
@@ -88,6 +95,19 @@ class SuperAdminViewModel(
         }
     }
 
+    // ── Load rejected count ───────────────────────────────────────────────────
+
+    fun loadRejectedCount() {
+        viewModelScope.launch {
+            repository.getRejectedCompanies().fold(
+                onSuccess = { companies -> _rejectedCount.value = companies.size },
+                onFailure = { }
+            )
+        }
+    }
+
+    // ── Approve ───────────────────────────────────────────────────────────────
+
     fun approveCompany(companyId: String) {
         viewModelScope.launch {
             _actionState.value = ActionState.Loading
@@ -95,7 +115,8 @@ class SuperAdminViewModel(
                 onSuccess = {
                     _actionState.value = ActionState.Success("Company approved successfully")
                     loadPendingCompanies()
-                    loadApprovedCompanies()  // ← refresh approved list + count after approval
+                    loadApprovedCompanies()
+                    loadRejectedCount()
                 },
                 onFailure = { error ->
                     _actionState.value = ActionState.Error(
@@ -106,6 +127,8 @@ class SuperAdminViewModel(
         }
     }
 
+    // ── Reject ────────────────────────────────────────────────────────────────
+
     fun rejectCompany(companyId: String) {
         viewModelScope.launch {
             _actionState.value = ActionState.Loading
@@ -113,6 +136,7 @@ class SuperAdminViewModel(
                 onSuccess = {
                     _actionState.value = ActionState.Success("Company rejected")
                     loadPendingCompanies()
+                    loadRejectedCount()   // ← refresh rejected count after rejection
                 },
                 onFailure = { error ->
                     _actionState.value = ActionState.Error(

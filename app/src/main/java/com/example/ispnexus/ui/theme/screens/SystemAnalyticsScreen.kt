@@ -32,6 +32,7 @@ private val CardWhite     = Color(0xFFFFFFFF)
 private val ActiveGreen   = Color(0xFF2E7D32)
 private val PendingAmber  = Color(0xFFB7791F)
 private val SuspendedRed  = Color(0xFFC62828)
+private val RejectedRed   = Color(0xFFB71C1C)
 private val PurpleAccent  = Color(0xFF6A1B9A)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -87,7 +88,6 @@ fun SystemAnalyticsScreen(
         ) {
             when (val s = state) {
 
-                // ── Loading ───────────────────────────────────────────────
                 is AnalyticsState.Loading -> {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
@@ -95,7 +95,6 @@ fun SystemAnalyticsScreen(
                     )
                 }
 
-                // ── Error ─────────────────────────────────────────────────
                 is AnalyticsState.Error -> {
                     Column(
                         modifier            = Modifier.align(Alignment.Center),
@@ -114,7 +113,6 @@ fun SystemAnalyticsScreen(
                     }
                 }
 
-                // ── Success ───────────────────────────────────────────────
                 is AnalyticsState.Success -> {
                     AnalyticsContent(data = s.data)
                 }
@@ -135,7 +133,6 @@ private fun AnalyticsContent(data: AnalyticsData) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
 
-        // ── Section: Key Metrics ──────────────────────────────────────────
         SectionLabel("Key Metrics")
 
         // Row 1: Total Companies | Active Companies
@@ -195,18 +192,19 @@ private fun AnalyticsContent(data: AnalyticsData) {
             )
         }
 
+        // Row 4: Rejected Companies (full width — stands out as a warning)
+        RejectedCard(count = data.rejectedCompanies)
+
         Spacer(modifier = Modifier.height(4.dp))
 
-        // ── Section: Company Growth Chart ─────────────────────────────────
+        // ── Bar Chart ─────────────────────────────────────────────────────
         SectionLabel("Company Growth (Last 6 Months)")
-
         BarChart(monthStats = data.monthlyGrowth)
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        // ── Section: Platform Health ──────────────────────────────────────
+        // ── Platform Health ───────────────────────────────────────────────
         SectionLabel("Platform Health")
-
         PlatformHealthCard(data = data)
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -230,9 +228,9 @@ private fun MetricCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text     = label,
-                fontSize = 11.sp,
-                color    = Color(0xFF9CA3AF),
+                text       = label,
+                fontSize   = 11.sp,
+                color      = Color(0xFF9CA3AF),
                 fontWeight = FontWeight.Medium
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -242,6 +240,51 @@ private fun MetricCard(
                 fontWeight = FontWeight.Bold,
                 color      = color
             )
+        }
+    }
+}
+
+// ── Rejected Card (full width, red tinted background) ────────────────────────
+
+@Composable
+private fun RejectedCard(count: Int) {
+    Surface(
+        shape           = RoundedCornerShape(16.dp),
+        color           = Color(0xFFFFEBEE),   // light red background
+        shadowElevation = 2.dp,
+        modifier        = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier          = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text       = "Rejected Companies",
+                    fontSize   = 11.sp,
+                    color      = Color(0xFF9CA3AF),
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text       = count.toString(),
+                    fontSize   = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = RejectedRed
+                )
+            }
+            Surface(
+                shape = RoundedCornerShape(999.dp),
+                color = Color(0xFFFFCDD2)
+            ) {
+                Text(
+                    text       = if (count == 0) "None" else "$count rejected",
+                    fontSize   = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = RejectedRed,
+                    modifier   = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                )
+            }
         }
     }
 }
@@ -286,33 +329,26 @@ private fun BarChart(monthStats: List<MonthStat>) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Bottom
                     ) {
-                        // Value label on top of bar
                         if (stat.count > 0) {
                             Text(
-                                text      = stat.count.toString(),
-                                fontSize  = 10.sp,
+                                text       = stat.count.toString(),
+                                fontSize   = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color     = CorporateBlue,
-                                textAlign = TextAlign.Center
+                                color      = CorporateBlue,
+                                textAlign  = TextAlign.Center
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))
-
-                        // Bar
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height((fraction * 120f).coerceAtLeast(6f).dp)
                                 .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                                 .background(
-                                    if (stat.count > 0) CorporateBlue
-                                    else Color(0xFFE5E7EB)
+                                    if (stat.count > 0) CorporateBlue else Color(0xFFE5E7EB)
                                 )
                         )
-
                         Spacer(modifier = Modifier.height(6.dp))
-
-                        // Month label
                         Text(
                             text      = stat.month,
                             fontSize  = 10.sp,
@@ -327,7 +363,6 @@ private fun BarChart(monthStats: List<MonthStat>) {
             HorizontalDivider(color = Color(0xFFF3F4F6))
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Legend
             Row(
                 modifier              = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
@@ -363,17 +398,22 @@ private fun PlatformHealthCard(data: AnalyticsData) {
         Column(modifier = Modifier.padding(16.dp)) {
 
             HealthRow(
-                label     = "Approval Rate",
-                value     = if (data.totalCompanies > 0)
+                label      = "Approval Rate",
+                value      = if (data.totalCompanies > 0)
                     "${"%.0f".format(data.activeCompanies.toFloat() / data.totalCompanies * 100)}%"
                 else "0%",
                 valueColor = ActiveGreen
             )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = Color(0xFFF3F4F6))
 
-            HorizontalDivider(
-                modifier  = Modifier.padding(vertical = 10.dp),
-                color     = Color(0xFFF3F4F6)
+            HealthRow(
+                label      = "Rejection Rate",
+                value      = if (data.totalCompanies > 0)
+                    "${"%.0f".format(data.rejectedCompanies.toFloat() / data.totalCompanies * 100)}%"
+                else "0%",
+                valueColor = RejectedRed
             )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = Color(0xFFF3F4F6))
 
             HealthRow(
                 label      = "Pending Rate",
@@ -382,22 +422,14 @@ private fun PlatformHealthCard(data: AnalyticsData) {
                 else "0%",
                 valueColor = PendingAmber
             )
-
-            HorizontalDivider(
-                modifier  = Modifier.padding(vertical = 10.dp),
-                color     = Color(0xFFF3F4F6)
-            )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = Color(0xFFF3F4F6))
 
             HealthRow(
                 label      = "Total Subscriptions",
                 value      = data.totalSubscriptions.toString(),
                 valueColor = CorporateBlue
             )
-
-            HorizontalDivider(
-                modifier  = Modifier.padding(vertical = 10.dp),
-                color     = Color(0xFFF3F4F6)
-            )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = Color(0xFFF3F4F6))
 
             HealthRow(
                 label      = "Month-on-Month Growth",
@@ -413,20 +445,11 @@ private fun PlatformHealthCard(data: AnalyticsData) {
 @Composable
 private fun HealthRow(label: String, value: String, valueColor: Color) {
     Row(
-        modifier          = Modifier.fillMaxWidth(),
+        modifier              = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment     = Alignment.CenterVertically
     ) {
-        Text(
-            text     = label,
-            fontSize = 13.sp,
-            color    = Color(0xFF4B5563)
-        )
-        Text(
-            text       = value,
-            fontSize   = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color      = valueColor
-        )
+        Text(text = label, fontSize = 13.sp, color = Color(0xFF4B5563))
+        Text(text = value, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = valueColor)
     }
 }
