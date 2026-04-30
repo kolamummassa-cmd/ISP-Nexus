@@ -19,10 +19,10 @@ fun AppNavHost() {
 
     NavHost(
         navController = navController,
-        startDestination = "admin"   // change to "login" for production
+        startDestination = "login"
     ) {
 
-        // ── Login ─────────────────────────
+
         composable("login") {
             LoginScreen(
                 onNavigateToSuperAdmin = {
@@ -46,7 +46,7 @@ fun AppNavHost() {
             )
         }
 
-        // ── Register ──────────────────────
+
         composable("register") {
             RegisterCompanyScreen(
                 onBackToLogin = { navController.popBackStack() },
@@ -58,7 +58,7 @@ fun AppNavHost() {
             )
         }
 
-        // ── Super Admin ───────────────────
+
         composable("super_admin") {
             SuperAdminScreen(
                 onPendingClick = { navController.navigate("pending_companies") },
@@ -72,7 +72,7 @@ fun AppNavHost() {
             )
         }
 
-        // ── Pending Companies ─────────────
+
         composable("pending_companies") {
             PendingCompaniesScreen(
                 onBack = { navController.popBackStack() }
@@ -96,7 +96,7 @@ fun AppNavHost() {
         // ── Admin Dashboard ───────────────
         composable("admin") {
             AdminDashboardScreen(
-                companyId = "test_company_id",
+//                companyId = "test_company_id",
                 onLogout = {
                     navController.navigate("login") {
                         popUpTo("admin") { inclusive = true }
