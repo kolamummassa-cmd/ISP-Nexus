@@ -187,26 +187,33 @@ private fun AdminDashboardContent(
                     }
                 },
                 actions = {
-                    // Company chip
                     Surface(
                         shape = RoundedCornerShape(20.dp),
                         color = Color.White.copy(alpha = 0.15f)
                     ) {
-                        Row(
-                            modifier          = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier            = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(Icons.Default.Business, contentDescription = null,
-                                tint = Color.White, modifier = Modifier.size(14.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(data.companyName, fontSize = 11.sp, color = Color.White,
-                                maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Business, contentDescription = null,
+                                    tint = Color.White, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text(data.companyName, fontSize = 11.sp, color = Color.White,
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+
+                            Text(
+                                text     = "Code: ${data.companyCode}",
+                                fontSize = 10.sp,
+                                color    = Color.White.copy(alpha = 0.75f),
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                     Spacer(Modifier.width(8.dp))
                     IconButton(onClick = onLogout) {
-                        Icon(Icons.Default.ExitToApp, contentDescription = "Logout",
-                            tint = Color.White)
+                        Icon(Icons.Default.ExitToApp, contentDescription = "Logout", tint = Color.White)
                     }
                 }
             )
@@ -703,7 +710,7 @@ private fun RecentPaymentsTable(
 private fun StatusChip(status: String, modifier: Modifier = Modifier) {
     val (bg, textColor) = when (status.lowercase()) {
         "active", "paid", "approved" -> Color(0xFFE8F5E9) to ActiveGreen
-        "pending"                    -> Color(0xFFFFF8E1) to PendingAmber
+        "Pending"                    -> Color(0xFFFFF8E1) to PendingAmber
         "suspended", "rejected"      -> Color(0xFFFFEBEE) to RedAccent
         else                         -> Color(0xFFF3F4F6) to TextGray
     }

@@ -79,8 +79,9 @@ class AuthRepository {
                 "taxPin"             to taxPin,
                 "phoneNumber"        to phoneNumber,
                 "logoUrl"            to (logoDownloadUrl ?: ""),
-                "status"             to "PENDING",      // super admin approves
+                "status"             to "Pending",      // super admin approves
                 "adminUid"           to uid,
+                "companyCode"        to generateCompanyCode(),
                 "createdAt"          to System.currentTimeMillis()
             )
 
@@ -120,7 +121,7 @@ class AuthRepository {
 //    suspend fun getPendingCompanies(): Result<List<Company>> {
 //        return try {
 //            val snapshot = db.collection("companies")
-//                .whereEqualTo("status", "PENDING")
+//                .whereEqualTo("status", "Pending")
 //                .get()
 //                .await()
 //
@@ -149,4 +150,8 @@ class AuthRepository {
 //            Result.failure(e)
 //        }
 //    }
+}
+private fun generateCompanyCode(): String {
+    val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    return (1..6).map { chars.random() }.joinToString("")
 }

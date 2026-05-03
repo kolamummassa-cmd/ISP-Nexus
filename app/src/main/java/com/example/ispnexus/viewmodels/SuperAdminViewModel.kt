@@ -31,31 +31,75 @@ class SuperAdminViewModel(
     private val repository: CompanyRepository = CompanyRepository()
 ) : ViewModel() {
 
+    // ── Company list states ───────────────────────────────────────────────────
     private val _pendingCompanies  = MutableStateFlow<CompanyListState>(CompanyListState.Loading)
     val pendingCompanies: StateFlow<CompanyListState> = _pendingCompanies.asStateFlow()
 
     private val _approvedCompanies = MutableStateFlow<CompanyListState>(CompanyListState.Loading)
     val approvedCompanies: StateFlow<CompanyListState> = _approvedCompanies.asStateFlow()
 
+    // ── Action state ──────────────────────────────────────────────────────────
     private val _actionState = MutableStateFlow<ActionState>(ActionState.Idle)
     val actionState: StateFlow<ActionState> = _actionState.asStateFlow()
 
+    // ── Live counts for dashboard stat strip ──────────────────────────────────
     private val _pendingCount  = MutableStateFlow(0)
     val pendingCount: StateFlow<Int> = _pendingCount.asStateFlow()
 
     private val _approvedCount = MutableStateFlow(0)
     val approvedCount: StateFlow<Int> = _approvedCount.asStateFlow()
 
-    private val _rejectedCount = MutableStateFlow(0)      // ← new
+    private val _rejectedCount = MutableStateFlow(0)
     val rejectedCount: StateFlow<Int> = _rejectedCount.asStateFlow()
 
     init {
-        loadPendingCompanies()
-        loadApprovedCompanies()
-        loadRejectedCount()            // ← load on init
+        // ── Start real-time listeners — updates happen automatically ──────────
+        observePending()
+        observeApproved()
+        observeRejected()
     }
 
-    // ── Load pending ──────────────────────────────────────────────────────────
+    // ── Real-time pending listener ────────────────────────────────────────────
+    // Whenever super admin approves/rejects, this updates instantly — no rerun needed
+
+    private fun observePending() {
+        viewModelScope.launch {
+            repository.observePendingCompanies().collect { companies ->
+                _pendingCount.value     = companies.size
+                _pendingCompanies.value = if (companies.isEmpty())
+                    CompanyListState.Empty
+                else
+                    CompanyListState.Success(companies)
+            }
+        }
+    }
+
+    // ── Real-time approved listener ───────────────────────────────────────────
+
+    private fun observeApproved() {
+        viewModelScope.launch {
+            repository.observeApprovedCompanies().collect { companies ->
+                _approvedCount.value     = companies.size
+                _approvedCompanies.value = if (companies.isEmpty())
+                    CompanyListState.Empty
+                else
+                    CompanyListState.Success(companies)
+            }
+        }
+    }
+
+    // ── Real-time rejected listener ───────────────────────────────────────────
+
+    private fun observeRejected() {
+        viewModelScope.launch {
+            repository.observeRejectedCompanies().collect { companies ->
+                _rejectedCount.value = companies.size
+            }
+        }
+    }
+
+    // ── Manual refresh (for refresh button) ───────────────────────────────────
+    // Real-time listeners handle updates automatically but refresh button still works
 
     fun loadPendingCompanies() {
         viewModelScope.launch {
@@ -64,7 +108,9 @@ class SuperAdminViewModel(
                 onSuccess = { companies ->
                     _pendingCount.value     = companies.size
                     _pendingCompanies.value = if (companies.isEmpty())
-                        CompanyListState.Empty else CompanyListState.Success(companies)
+                        CompanyListState.Empty
+                    else
+                        CompanyListState.Success(companies)
                 },
                 onFailure = { error ->
                     _pendingCompanies.value = CompanyListState.Error(
@@ -75,8 +121,6 @@ class SuperAdminViewModel(
         }
     }
 
-    // ── Load approved ─────────────────────────────────────────────────────────
-
     fun loadApprovedCompanies() {
         viewModelScope.launch {
             _approvedCompanies.value = CompanyListState.Loading
@@ -84,7 +128,9 @@ class SuperAdminViewModel(
                 onSuccess = { companies ->
                     _approvedCount.value     = companies.size
                     _approvedCompanies.value = if (companies.isEmpty())
-                        CompanyListState.Empty else CompanyListState.Success(companies)
+                        CompanyListState.Empty
+                    else
+                        CompanyListState.Success(companies)
                 },
                 onFailure = { error ->
                     _approvedCompanies.value = CompanyListState.Error(
@@ -94,8 +140,6 @@ class SuperAdminViewModel(
             )
         }
     }
-
-    // ── Load rejected count ───────────────────────────────────────────────────
 
     fun loadRejectedCount() {
         viewModelScope.launch {
@@ -107,16 +151,15 @@ class SuperAdminViewModel(
     }
 
     // ── Approve ───────────────────────────────────────────────────────────────
+    // Real-time listeners will auto-update all counts and lists after this
 
     fun approveCompany(companyId: String) {
         viewModelScope.launch {
             _actionState.value = ActionState.Loading
             repository.approveCompany(companyId).fold(
                 onSuccess = {
+                    // No need to manually reload — real-time listeners handle it
                     _actionState.value = ActionState.Success("Company approved successfully")
-                    loadPendingCompanies()
-                    loadApprovedCompanies()
-                    loadRejectedCount()
                 },
                 onFailure = { error ->
                     _actionState.value = ActionState.Error(
@@ -134,9 +177,8 @@ class SuperAdminViewModel(
             _actionState.value = ActionState.Loading
             repository.rejectCompany(companyId).fold(
                 onSuccess = {
+                    // No need to manually reload — real-time listeners handle it
                     _actionState.value = ActionState.Success("Company rejected")
-                    loadPendingCompanies()
-                    loadRejectedCount()   // ← refresh rejected count after rejection
                 },
                 onFailure = { error ->
                     _actionState.value = ActionState.Error(

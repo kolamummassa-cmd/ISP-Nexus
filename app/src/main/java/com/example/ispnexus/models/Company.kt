@@ -9,7 +9,7 @@ data class Company(
     val taxPin: String = "",
     val phoneNumber: String = "",
     val logoUrl: String = "",
-    val status: String = "PENDING", // Default to uppercase
+    val status: String = "Pending", // Default to uppercase
     val adminUid: String = "",
     val createdAt: Long = 0L
 )

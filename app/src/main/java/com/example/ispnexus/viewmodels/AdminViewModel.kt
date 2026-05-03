@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import okhttp3.internal.http2.ErrorCode
 import java.util.Calendar
 
 // ── Dashboard Data Model ──────────────────────────────────────────────────────
@@ -17,6 +18,9 @@ import java.util.Calendar
 data class AdminDashboardData(
     val companyName: String = "",
     val adminName: String = "",
+    val companyStatus: String = "",
+    val submittedAt: Long? = 0L,
+    val companyCode: String = "",
     val totalInstitutions: Int = 0,
     val activeSubscriptions: Int = 0,
     val pendingPayments: Double = 0.0,
@@ -99,6 +103,18 @@ class AdminViewModel : ViewModel() {
         val companyDoc  = db.collection("companies").document(uid).get().await()
         val companyName = companyDoc.getString("companyName") ?: "My Company"
         val adminName   = companyDoc.getString("adminName") ?: "Admin"
+        val companyStatus = companyDoc.getString("status") ?: "Pending"
+        val submittedAt = resolveMillis(companyDoc.get("createdAt") ?: 0L)
+        val companyCode = companyDoc.getString("companyCode").let { code ->
+            if (code.isNullOrBlank()) {
+                val newCode = generateCompanyCode()
+                db.collection("companies").document(uid)
+                    .update("companyCode", newCode).await()
+                newCode
+            } else {
+                code
+            }
+        }
 
         val months = listOf(
             "Jan","Feb","Mar","Apr","May","Jun",
@@ -132,7 +148,7 @@ class AdminViewModel : ViewModel() {
             .sumOf  { it.getDouble("amount") ?: 0.0 }
 
         val outstanding = payments
-            .filter { it.getString("status") == "pending" }
+            .filter { it.getString("status") == "Pending" }
             .sumOf  { it.getDouble("amount") ?: 0.0 }
 
         val totalExpected  = collected + outstanding
@@ -219,24 +235,27 @@ class AdminViewModel : ViewModel() {
         // ── Emit ──────────────────────────────────────────────────────────────
         _state.value = AdminDashboardState.Success(
             AdminDashboardData(
-                companyName            = companyName,
-                adminName              = adminName,
-                totalInstitutions      = totalInstitutions,
-                activeSubscriptions    = activeSubscriptions,
-                pendingPayments        = outstanding,
-                monthlyRevenue         = monthlyRevenue,
-                suspendedInstitutions  = suspendedInstitutions,
-                activeTechnicians      = activeTechnicians,
-                collectionRate         = collectionRate,
-                collected              = collected,
-                outstanding            = outstanding,
-                mostPopularPlan        = mostPopularPlan,
-                mostPopularPlanCount   = mostPopularPlanCount,
+                companyName = companyName,
+                adminName = adminName,
+                companyStatus = companyStatus,
+                submittedAt = submittedAt,
+                companyCode = companyCode,
+                totalInstitutions = totalInstitutions,
+                activeSubscriptions = activeSubscriptions,
+                pendingPayments = outstanding,
+                monthlyRevenue = monthlyRevenue,
+                suspendedInstitutions = suspendedInstitutions,
+                activeTechnicians = activeTechnicians,
+                collectionRate = collectionRate,
+                collected = collected,
+                outstanding = outstanding,
+                mostPopularPlan = mostPopularPlan,
+                mostPopularPlanCount = mostPopularPlanCount,
                 mostPopularPlanPercent = mostPopularPlanPercent,
-                defaulterRate          = defaulterRate,
-                recentInstitutions     = recentInstitutions,
-                recentPayments         = recentPayments,
-                monthlyRevenueTrend    = monthlyRevenueTrend
+                defaulterRate = defaulterRate,
+                recentInstitutions = recentInstitutions,
+                recentPayments = recentPayments,
+                monthlyRevenueTrend = monthlyRevenueTrend
             )
         )
     }
@@ -249,4 +268,8 @@ class AdminViewModel : ViewModel() {
             else         -> null
         }
     }
+}
+private fun generateCompanyCode(): String {
+    val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    return (1..6).map { chars.random() }.joinToString("")
 }

@@ -36,21 +36,27 @@ import java.util.Calendar
 // ── Colors ────────────────────────────────────────────────────────────────────
 
 private val CorporateBlue  = Color(0xFF0D47A1)
-private val PageBackground = Color(0xFFF0F2F5)
-private val CardWhite      = Color(0xFFFFFFFF)
+private val LightBackground = Color(0xFFF4F6F8)
 
-// ── Data Model ────────────────────────────────────────────────────────────────
+// ── Data Models ───────────────────────────────────────────────────────────────
 
 @Immutable
 data class DashboardCardData(
     val title: String,
     val subtitle: String,
     val icon: ImageVector,
-    val iconBackground: Color,
     val iconTint: Color,
+    val iconBackground: Color,
     val badge: String? = null,
     val badgeIsAlert: Boolean = false,
     val onClick: () -> Unit
+)
+
+@Immutable
+data class StatItem(
+    val label: String,
+    val value: String,
+    val valueColor: Color? = null
 )
 
 // ── Greeting ──────────────────────────────────────────────────────────────────
@@ -63,76 +69,41 @@ private fun greeting(): String {
     }
 }
 
-// ── Top Bar ───────────────────────────────────────────────────────────────────
+// ── Main Screen ───────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SuperAdminTopBar(onLogout: () -> Unit) {
-    TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor         = CorporateBlue,
-            titleContentColor      = Color.White,
-            actionIconContentColor = Color.White
-        ),
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter            = painterResource(id = R.drawable.isp_nexus),
-                    contentDescription = "ISP Nexus Logo",
-                    modifier           = Modifier.size(42.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(
-                        text       = "ISP Nexus",
-                        fontWeight = FontWeight.Bold,
-                        fontSize   = 18.sp,
-                        color      = Color.White
-                    )
-                    Text(
-                        text     = greeting(),
-                        fontSize = 12.sp,
-                        color    = Color.White.copy(alpha = 0.85f)
-                    )
-                }
-            }
-        },
-        actions = {
-            IconButton(onClick = onLogout) {
-                Icon(
-                    imageVector        = Icons.Default.ExitToApp,
-                    contentDescription = "Logout",
-                    tint               = Color.White
-                )
-            }
-        }
-    )
-}
-
-// ── Main Screen ───────────────────────────────────────────────────────────────
-
-@Composable
 fun SuperAdminScreen(
-    onPendingClick: () -> Unit,
+    onPendingClick: () -> Unit = {},
     onApprovedClick: () -> Unit = {},
     onAnalyticsClick: () -> Unit = {},
-    onLogout: () -> Unit,
-    viewModel: SuperAdminViewModel = viewModel(),
+    onLogout: () -> Unit = {},
+    viewModel: SuperAdminViewModel = viewModel(),   // ← live data source
     authViewModel: AuthViewModel = viewModel()
-) {                                                          // ← function opens here
-
+) {
+    // ── Live counts — update automatically when Firestore changes ─────────────
     val pendingCount  by viewModel.pendingCount.collectAsState()
     val approvedCount by viewModel.approvedCount.collectAsState()
-    val totalCount    = pendingCount + approvedCount
+    val rejectedCount by viewModel.rejectedCount.collectAsState()
 
-    // No remember() — list rebuilds on every recomposition so counts stay live
+    // Total = ALL companies regardless of status
+    val totalCount = pendingCount + approvedCount + rejectedCount
+
+    // Stats — labels are static, values are live
+    val stats = listOf(
+        StatItem("Total ISPs", totalCount.toString()),
+        StatItem("Pending",    pendingCount.toString(),  Color(0xFFB7791F)),
+        StatItem("Approved",   approvedCount.toString(), Color(0xFF2E7D32))
+    )
+
+    // Cards — badges update live when counts change
     val cards = listOf(
         DashboardCardData(
             title          = "Pending Companies",
             subtitle       = "Approve or reject registrations",
             icon           = Icons.Default.PendingActions,
-            iconBackground = Color(0xFFFFF4E5),
             iconTint       = Color(0xFFB7791F),
+            iconBackground = Color(0xFFFFF4E5),
             badge          = if (pendingCount > 0) "$pendingCount new" else null,
             badgeIsAlert   = true,
             onClick        = onPendingClick
@@ -141,25 +112,64 @@ fun SuperAdminScreen(
             title          = "Approved Companies",
             subtitle       = "Manage verified ISPs",
             icon           = Icons.Default.Business,
-            iconBackground = Color(0xFFE8F5E9),
-            iconTint       = Color(0xFF2E7D32),
+            iconTint       = CorporateBlue,
+            iconBackground = Color(0xFFE3F2FD),
             badge          = "$approvedCount",
-            badgeIsAlert   = false,
             onClick        = onApprovedClick
         ),
         DashboardCardData(
             title          = "System Analytics",
             subtitle       = "View revenue and usage reports",
             icon           = Icons.Default.Analytics,
-            iconBackground = Color(0xFFE3F2FD),
             iconTint       = CorporateBlue,
+            iconBackground = Color(0xFFE8EAF6),
             onClick        = onAnalyticsClick
         )
     )
 
-    Scaffold(                                                // ← Scaffold is INSIDE the function
-        topBar         = { SuperAdminTopBar(onLogout = onLogout) },
-        containerColor = PageBackground
+    Scaffold(
+        containerColor = LightBackground,
+        topBar = {
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor         = CorporateBlue,
+                    titleContentColor      = Color.White,
+                    actionIconContentColor = Color.White
+                ),
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter            = painterResource(id = R.drawable.isp_nexus),
+                            contentDescription = "ISP Nexus Logo",
+                            modifier           = Modifier.size(36.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text       = "ISP Nexus",
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text     = greeting(),
+                                fontSize = 12.sp,
+                                color    = Color.White.copy(alpha = 0.85f)
+                            )
+                        }
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        authViewModel.logout()
+                        onLogout()
+                    }) {
+                        Icon(
+                            imageVector        = Icons.Default.ExitToApp,
+                            contentDescription = "Logout"
+                        )
+                    }
+                }
+            )
+        }
     ) { padding ->
 
         LazyColumn(
@@ -167,131 +177,91 @@ fun SuperAdminScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 16.dp),
-            contentPadding      = PaddingValues(vertical = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(0.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            contentPadding      = PaddingValues(vertical = 18.dp)
         ) {
 
-            // ── Stat strip ────────────────────────────────────────────────
-            item {
-                Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    StatCard(
-                        label    = "Total ISPs",
-                        value    = totalCount.toString(),
-                        color    = Color(0xFF1A1A1A),
-                        modifier = Modifier.weight(1f)
-                    )
-                    StatCard(
-                        label    = "Pending",
-                        value    = pendingCount.toString(),
-                        color    = Color(0xFFB7791F),
-                        modifier = Modifier.weight(1f)
-                    )
-                    StatCard(
-                        label    = "Approved",
-                        value    = approvedCount.toString(),
-                        color    = Color(0xFF2E7D32),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(24.dp))
-            }
+            // ── Stat strip — only numbers change, layout is static ────────
+            item { StatStrip(stats) }
 
             // ── Section label ─────────────────────────────────────────────
             item {
                 Text(
-                    text       = "Management",
-                    fontSize   = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color      = Color(0xFF6B7280),
-                    modifier   = Modifier.padding(bottom = 12.dp)
+                    text  = "Management",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.Gray
                 )
             }
 
             // ── Action cards ──────────────────────────────────────────────
-            items(
-                items = cards,
-                key   = { it.title }
-            ) { card ->
-                ActionCard(card = card)
-                Spacer(modifier = Modifier.height(12.dp))
+            items(cards, key = { it.title }) { card ->
+                DashboardCard(card)
             }
 
             // ── Footer ────────────────────────────────────────────────────
             item {
-                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text      = "ISP Nexus • System Status: Online",
-                    fontSize  = 11.sp,
-                    color     = Color(0xFF9CA3AF),
+                    style     = MaterialTheme.typography.labelSmall,
                     textAlign = TextAlign.Center,
-                    modifier  = Modifier.fillMaxWidth()
+                    modifier  = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    color = Color.Gray
                 )
             }
         }
     }
-}                                                            // ← function closes here
+}
 
-// ── Stat Card ─────────────────────────────────────────────────────────────────
+// ── Stat Strip ────────────────────────────────────────────────────────────────
 
 @Composable
-private fun StatCard(
-    label: String,
-    value: String,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier        = modifier,
-        shape           = RoundedCornerShape(16.dp),
-        color           = CardWhite,
-        tonalElevation  = 0.dp,
-        shadowElevation = 2.dp
+fun StatStrip(stats: List<StatItem>) {
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        stats.forEach {
+            StatCard(it, Modifier.weight(1f))
+        }
+    }
+}
+
+// ── Stat Card — card layout is static, only value text changes ───────────────
+
+@Composable
+fun StatCard(stat: StatItem, modifier: Modifier) {
+    ElevatedCard(
+        modifier = modifier,
+        shape    = RoundedCornerShape(14.dp)
     ) {
-        Column(
-            modifier            = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Text(stat.label, fontSize = 12.sp, color = Color.Gray)
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text       = label,
-                fontSize   = 11.sp,
-                color      = Color(0xFF9CA3AF),
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text       = value,
-                fontSize   = 26.sp,
+                text       = stat.value,
+                fontSize   = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color      = color
+                color      = stat.valueColor ?: Color.Black
             )
         }
     }
 }
 
-// ── Action Card ───────────────────────────────────────────────────────────────
+// ── Dashboard Card ────────────────────────────────────────────────────────────
 
 @Composable
-private fun ActionCard(card: DashboardCardData) {
-    Surface(
-        onClick         = card.onClick,
-        shape           = RoundedCornerShape(20.dp),
-        color           = CardWhite,
-        tonalElevation  = 0.dp,
-        shadowElevation = 2.dp,
-        modifier        = Modifier.fillMaxWidth()
+fun DashboardCard(card: DashboardCardData) {
+    ElevatedCard(
+        onClick  = card.onClick,
+        shape    = RoundedCornerShape(18.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier          = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier          = Modifier.padding(18.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier         = Modifier
-                    .size(50.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
                     .background(card.iconBackground),
                 contentAlignment = Alignment.Center
@@ -300,38 +270,27 @@ private fun ActionCard(card: DashboardCardData) {
                     imageVector        = card.icon,
                     contentDescription = null,
                     tint               = card.iconTint,
-                    modifier           = Modifier.size(26.dp)
+                    modifier           = Modifier.size(24.dp)
                 )
             }
 
             Spacer(modifier = Modifier.width(14.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text       = card.title,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize   = 15.sp,
-                    color      = Color(0xFF1A1A1A)
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text     = card.subtitle,
-                    fontSize = 12.sp,
-                    color    = Color(0xFF6B7280)
-                )
+                Text(card.title, fontWeight = FontWeight.SemiBold)
+                Text(card.subtitle, fontSize = 13.sp, color = Color.Gray)
             }
 
-            card.badge?.let { label ->
-                Spacer(modifier = Modifier.width(8.dp))
+            card.badge?.let {
                 Surface(
-                    shape = RoundedCornerShape(999.dp),
+                    shape = RoundedCornerShape(50),
                     color = if (card.badgeIsAlert) Color(0xFFFFE0B2) else Color(0xFFC8E6C9)
                 ) {
                     Text(
-                        text       = label,
-                        modifier   = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
-                        fontSize   = 12.sp,
-                        fontWeight = FontWeight.Bold,
+                        text       = it,
+                        modifier   = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        fontSize   = 11.sp,
+                        fontWeight = FontWeight.Medium,
                         color      = if (card.badgeIsAlert) Color(0xFFB7791F) else Color(0xFF2E7D32)
                     )
                 }

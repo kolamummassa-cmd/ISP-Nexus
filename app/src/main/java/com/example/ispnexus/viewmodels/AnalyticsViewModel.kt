@@ -55,10 +55,10 @@ class AnalyticsViewModel : ViewModel() {
                 val allCompanies      = companiesSnapshot.documents
 
                 val total      = allCompanies.size
-                val active     = allCompanies.count { it.getString("status") == "approved" }
-                val pending    = allCompanies.count { it.getString("status") == "pending" }
-                val suspended  = allCompanies.count { it.getString("status") == "suspended" }
-                val rejected   = allCompanies.count { it.getString("status") == "rejected" }  // ← new
+                val active     = allCompanies.count { it.getString("status") == "Approved" }
+                val pending    = allCompanies.count { it.getString("status") == "Pending" }
+                val suspended  = allCompanies.count { it.getString("status") == "Suspended" }
+                val rejected   = allCompanies.count { it.getString("status") == "Rejected" }  // ← new
 
                 val institutionsSnapshot  = db.collection("institutions").get().await()
                 val totalInstitutions     = institutionsSnapshot.size()

@@ -208,7 +208,7 @@ fun LoginScreen(
                     // Register link
                     TextButton(onClick = onNavigateToRegister) {
                         Text(
-                            text = "Register your ISP Company",
+                            text = "Don't Have an Account? Register ",
                             color = CorporateBlue,
                             fontWeight = FontWeight.Medium
                         )

@@ -16,13 +16,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.ispnexus.models.Company
 import com.example.ispnexus.viewmodels.*
+import com.example.ispnexus.viewmodels.SuperAdminViewModel
 
 private val CorporateBlue = Color(0xFF0D47A1)
 private val ApproveGreen  = Color(0xFF2E7D32)
@@ -66,7 +66,7 @@ fun PendingCompaniesScreen(
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (val state = pendingState) {
                 is CompanyListState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center), color = CorporateBlue)
-                is CompanyListState.Empty -> Text("No pending companies", Modifier.align(Alignment.Center), color = Color.Gray)
+                is CompanyListState.Empty -> Text("No Pending companies", Modifier.align(Alignment.Center), color = Color.Gray)
                 is CompanyListState.Success -> {
                     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                         items(state.companies, key = { it.adminUid }) { company ->
@@ -93,9 +93,29 @@ fun PendingCompanyCard(company: Company, isLoading: Boolean, onApprove: () -> Un
         AlertDialog(
             onDismissRequest = { showRejectDialog = false },
             title = { Text("Reject Company?") },
-            text = { Text("Are you sure you want to reject \"${company.companyName}\"?") },
-            confirmButton = { TextButton(onClick = { showRejectDialog = false; onReject() }) { Text("Reject", color = RejectRed) } },
-            dismissButton = { TextButton(onClick = { showRejectDialog = false }) { Text("Cancel") } }
+            text = {
+                Column {
+                    Text(
+                        "You are about to reject \"${company.companyName}\".",
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text("This will permanently delete the company and their account. They will need to register again.")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRejectDialog = false
+                    onReject()
+                }) {
+                    Text("Reject", color = RejectRed, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRejectDialog = false }) {
+                    Text("Cancel")
+                }
+            }
         )
     }
 

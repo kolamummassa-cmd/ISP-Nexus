@@ -47,7 +47,7 @@ private val DividerGray = Color(0xFFE0E0E0)
 @Composable
 fun RegisterCompanyScreen(
     onBackToLogin: () -> Unit,
-    onRegistrationSuccess: () -> Unit,
+    onRegistrationSuccess: (String) -> Unit,
     viewModel: RegisterViewModel = viewModel()
 ) {
     var adminName          by remember { mutableStateOf("") }
@@ -72,7 +72,7 @@ fun RegisterCompanyScreen(
 
     LaunchedEffect(registerState) {
         if (registerState is RegisterState.Success) {
-            onRegistrationSuccess()
+            onRegistrationSuccess(companyName)
             viewModel.resetState()
         }
     }
