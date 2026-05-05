@@ -232,8 +232,13 @@ fun StaffRejectedScreen(
                         contentDescription = "Logo", modifier = Modifier.size(44.dp))
                     Spacer(Modifier.width(12.dp))
                     Column {
-                        Text("ISP NEXUS", fontSize = 18.sp, fontWeight = FontWeight.Bold,
-                            color = Color.White)
+
+                        Text(
+                            text       = companyName.ifEmpty { "ISP NEXUS" },  // ← shows company name
+                            fontSize   = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color      = Color.White
+                        )
                         Text("Connect. Manage. Grow.", fontSize = 11.sp,
                             color = Color.White.copy(alpha = 0.65f))
                     }

@@ -96,7 +96,7 @@ fun PendingApprovalScreen(
                     Spacer(Modifier.width(12.dp))
                     Column {
                         Text(
-                            text       = "ISP NEXUS",
+                            text       = companyName.ifEmpty { "ISP NEXUS" },
                             fontSize   = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color      = Color.White

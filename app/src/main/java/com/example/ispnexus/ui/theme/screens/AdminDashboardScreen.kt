@@ -31,6 +31,8 @@ import com.example.ispnexus.viewmodels.RevenueStat
 import java.text.NumberFormat
 import kotlinx.coroutines.launch
 import java.util.Locale
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.rememberDrawerState
 
 // ── Colors ────────────────────────────────────────────────────────────────────
 
@@ -710,7 +712,7 @@ private fun RecentPaymentsTable(
 private fun StatusChip(status: String, modifier: Modifier = Modifier) {
     val (bg, textColor) = when (status.lowercase()) {
         "active", "paid", "approved" -> Color(0xFFE8F5E9) to ActiveGreen
-        "Pending"                    -> Color(0xFFFFF8E1) to PendingAmber
+        "pending"                    -> Color(0xFFFFF8E1) to PendingAmber
         "suspended", "rejected"      -> Color(0xFFFFEBEE) to RedAccent
         else                         -> Color(0xFFF3F4F6) to TextGray
     }

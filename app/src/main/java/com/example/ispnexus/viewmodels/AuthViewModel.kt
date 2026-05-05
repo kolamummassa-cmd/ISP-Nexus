@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 sealed class AuthState {
     object Idle : AuthState()
     object Loading : AuthState()
-    data class Success(val role: String) : AuthState()
+    data class Success(val destination: String) : AuthState()
     data class Error(val message: String) : AuthState()
 }
 
@@ -39,7 +39,17 @@ class AuthViewModel(
         viewModelScope.launch {
             repository.login(email.trim(), password).fold(
                 onSuccess = { user ->
-                    _loginState.value = AuthState.Success(user.role)
+                    val destination = when (user.role.lowercase().trim()) {
+                        "super_admin" -> "super_admin"
+                        "admin"       -> "admin"
+                        "staff"       -> when (user.position.lowercase().trim()) {
+                            "technician" -> "technician_dashboard"
+                            "finance"    -> "finance_dashboard"
+                            else         -> "staff_waiting"
+                        }
+                        else -> "login"
+                    }
+                    _loginState.value = AuthState.Success(destination)
                 },
                 onFailure = { error ->
                     _loginState.value = AuthState.Error(

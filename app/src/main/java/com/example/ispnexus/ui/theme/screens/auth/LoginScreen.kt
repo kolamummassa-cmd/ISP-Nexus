@@ -35,6 +35,8 @@ fun LoginScreen(
     onNavigateToAdmin: () -> Unit,
     onNavigateToUser: () -> Unit,
     onNavigateToRegister: () -> Unit,
+    onNavigateToTechnician: () -> Unit = {},
+    onNavigateToFinance: () -> Unit = {},
     viewModel: AuthViewModel = viewModel()
 ) {
     var email by remember { mutableStateOf("") }
@@ -50,14 +52,16 @@ fun LoginScreen(
     // React to successful login — navigate based on role
     LaunchedEffect(loginState) {
         if (loginState is AuthState.Success) {
-            val role = (loginState as AuthState.Success).role
-            when (role.lowercase().trim()) {
-                "super_admin" -> onNavigateToSuperAdmin()
-                "admin"       -> onNavigateToAdmin()
-                else          -> onNavigateToUser()
-            }
-            viewModel.resetState()
+        val destination = (loginState as AuthState.Success).destination
+        when (destination) {
+            "super_admin"            -> onNavigateToSuperAdmin()
+            "admin"                  -> onNavigateToAdmin()
+            "technician_dashboard"   -> onNavigateToTechnician()
+            "finance_dashboard"      -> onNavigateToFinance()
+            else                     -> onNavigateToUser()
         }
+        viewModel.resetState()
+    }
     }
 
     Box(

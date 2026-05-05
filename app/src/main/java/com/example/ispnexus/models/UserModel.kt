@@ -8,6 +8,6 @@ data class User(
     val name: String = "",
     val role: String = "",
     val companyId: String = "",
-
+    val position: String = "",
     val createdAt: Any? = null
 )

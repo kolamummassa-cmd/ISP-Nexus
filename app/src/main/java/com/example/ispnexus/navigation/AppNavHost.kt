@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.example.ispnexus.ui.theme.screens.ManageStaffScreen
 import com.example.ispnexus.ui.theme.screens.StaffRejectedScreen
 import com.example.ispnexus.ui.theme.screens.StaffWaitingScreen
+import com.example.ispnexus.ui.theme.screens.TechnicianDashboardScreen
 import com.example.ispnexus.ui.theme.screens.auth.StaffRegisterScreen
 
 @Composable
@@ -70,6 +71,16 @@ fun AppNavHost() {
                 },
                 onNavigateToUser = {
                     navController.navigate("user") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
+                onNavigateToTechnician = {                                    // ← add this
+                    navController.navigate("technician_dashboard") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
+                onNavigateToFinance = {                                       // ← add this
+                    navController.navigate("finance_dashboard") {
                         popUpTo("login") { inclusive = true }
                     }
                 },
@@ -247,6 +258,22 @@ fun AppNavHost() {
             ManageStaffScreen(
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        // ── Technician Dashboard ──────────────────────────────────────────────────────
+        composable("technician_dashboard") {
+            TechnicianDashboardScreen(
+                onTicketClick    = { },
+                onViewAllTickets = { },
+                onViewAllVisits  = { },
+                onViewAllDevices = { }
+            )
+        }
+
+// ── Finance Dashboard ─────────────────────────────────────────────────────────
+        composable("finance_dashboard") {
+            // TODO: replace with FinanceDashboardScreen() once built
+            Text("Finance Dashboard")
         }
 
     }
