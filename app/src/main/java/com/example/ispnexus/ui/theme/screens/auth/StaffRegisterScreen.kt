@@ -169,7 +169,22 @@ fun StaffRegisterScreen(
                     )
 
                     Spacer(Modifier.height(10.dp))
-                    RegField(position, { position = it }, "Position / Job Title")
+                    Text("Select Your Position", fontSize = 12.sp, color = Color.Gray)
+                    Spacer(Modifier.height(6.dp))
+                    val positions = listOf("Technician", "Finance")
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        positions.forEach { p ->
+                            FilterChip(
+                                selected = position == p,
+                                onClick  = { position = p },
+                                label    = { Text(p) },
+                                colors   = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = NavyBlue,
+                                    selectedLabelColor     = Color.White
+                                )
+                            )
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(14.dp))

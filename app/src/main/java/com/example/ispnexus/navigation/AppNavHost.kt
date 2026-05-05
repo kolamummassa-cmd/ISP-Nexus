@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.ispnexus.ui.theme.screens.FinanceDashboardScreen
 import com.example.ispnexus.ui.theme.screens.ManageStaffScreen
 import com.example.ispnexus.ui.theme.screens.StaffRejectedScreen
 import com.example.ispnexus.ui.theme.screens.StaffWaitingScreen
@@ -272,9 +273,36 @@ fun AppNavHost() {
 
 // ── Finance Dashboard ─────────────────────────────────────────────────────────
         composable("finance_dashboard") {
-            // TODO: replace with FinanceDashboardScreen() once built
-            Text("Finance Dashboard")
+            FinanceDashboardScreen(
+                onNavigateToPayments  = { navController.navigate("payments") },
+                onNavigateToInvoices  = { navController.navigate("invoices") },
+                onNavigateToReports   = { navController.navigate("reports") },
+                onNavigateToMore      = { navController.navigate("more") },
+                onMenuClick           = { navController.navigate("menu") },
+                onPaymentClick        = { payment -> navController.navigate("payment_detail/${payment.id}") },
+                onViewAllPayments     = { navController.navigate("payments") },
+                onViewAllDefaulters   = { navController.navigate("defaulters") },
+                onRecordPayment       = { navController.navigate("record_payment") },
+                onGenerateInvoice     = { navController.navigate("generate_invoice") },
+                onExportReport        = { navController.navigate("export_report") },
+                onViewDefaulters      = { navController.navigate("defaulters") },
+            )
         }
 
+        composable("payments")         { /* PaymentsScreen() */ }
+        composable("invoices")         { /* InvoicesScreen() */ }
+        composable("reports")          { /* ReportsScreen() */ }
+        composable("more")             { /* MoreScreen() */ }
+        composable("defaulters")       { /* DefaultersScreen() */ }
+        composable("record_payment")   { /* RecordPaymentScreen() */ }
+        composable("generate_invoice") { /* GenerateInvoiceScreen() */ }
+        composable("export_report")    { /* ExportReportScreen() */ }
+
+        composable("payment_detail/{id}") { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id")
+            /* PaymentDetailScreen(paymentId = id) */
+        }
     }
+
+
 }

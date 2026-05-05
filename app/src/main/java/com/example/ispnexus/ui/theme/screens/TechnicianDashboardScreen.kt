@@ -285,7 +285,7 @@ fun TechnicianTopBar(
 
 // ─── Welcome Header ───────────────────────────────────────────────────────────
 @Composable
-fun WelcomeHeader(technicianName: String) {
+private fun WelcomeHeader(technicianName: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()

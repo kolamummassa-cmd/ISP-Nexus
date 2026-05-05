@@ -64,7 +64,7 @@ class StaffAuthViewModel(
             !email.contains("@") -> { _registerState.value = StaffRegisterState.Error("Enter a valid email");        return }
             password.length < 6  -> { _registerState.value = StaffRegisterState.Error("Password must be 6+ chars"); return }
             companyCode.isBlank() -> { _registerState.value = StaffRegisterState.Error("Company code is required");  return }
-            position.isBlank()    -> { _registerState.value = StaffRegisterState.Error("Position is required");      return }
+            position.isBlank() -> { _registerState.value = StaffRegisterState.Error("Please select your position"); return }
         }
 
         viewModelScope.launch {
