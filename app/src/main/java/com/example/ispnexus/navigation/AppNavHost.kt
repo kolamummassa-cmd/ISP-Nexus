@@ -33,10 +33,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.ispnexus.ui.theme.screens.FinanceDashboardScreen
+import com.example.ispnexus.ui.theme.screens.InstitutionsScreen
+import com.example.ispnexus.ui.theme.screens.InvoicesScreen
 import com.example.ispnexus.ui.theme.screens.ManageStaffScreen
+import com.example.ispnexus.ui.theme.screens.PaymentsScreen
+import com.example.ispnexus.ui.theme.screens.PlansScreen
+import com.example.ispnexus.ui.theme.screens.ReportsScreen
 import com.example.ispnexus.ui.theme.screens.StaffRejectedScreen
 import com.example.ispnexus.ui.theme.screens.StaffWaitingScreen
+import com.example.ispnexus.ui.theme.screens.SubscriptionsScreen
 import com.example.ispnexus.ui.theme.screens.TechnicianDashboardScreen
+import com.example.ispnexus.ui.theme.screens.auth.RecordPaymentScreen
 import com.example.ispnexus.ui.theme.screens.auth.StaffRegisterScreen
 
 @Composable
@@ -45,123 +52,122 @@ fun AppNavHost() {
     val navController = rememberNavController()
 
     NavHost(
-        navController = navController,
-        startDestination = "role_selection"
+        navController    = navController,
+        startDestination = ROLE_SELECTION
     ) {
 
-        composable("role_selection"){
+        // ── Role Selection ────────────────────────────────────────────────────
+        composable(ROLE_SELECTION) {
             RoleSelectionScreen(
-                onLoginClick = {navController.navigate("login")},
-                onRegisterCompany = {navController.navigate("register")},
-                onRegisterStaff = {navController.navigate("staff_register")}
+                onLoginClick      = { navController.navigate(LOG_IN) },
+                onRegisterCompany = { navController.navigate(REGISTER_COMPANY) },
+                onRegisterStaff   = { navController.navigate(STAFF_REGISTER) }
             )
         }
 
-
-        composable("login") {
+        // ── Login ─────────────────────────────────────────────────────────────
+        composable(LOG_IN) {
             LoginScreen(
                 onNavigateToSuperAdmin = {
-                    navController.navigate("super_admin") {
-                        popUpTo("login") { inclusive = true }
+                    navController.navigate(SUPER_ADMIN) {
+                        popUpTo(LOG_IN) { inclusive = true }
                     }
                 },
                 onNavigateToAdmin = {
-                    navController.navigate("admin") {
-                        popUpTo("login") { inclusive = true }
+                    navController.navigate(ADMIN) {
+                        popUpTo(LOG_IN) { inclusive = true }
                     }
                 },
                 onNavigateToUser = {
                     navController.navigate("user") {
-                        popUpTo("login") { inclusive = true }
+                        popUpTo(LOG_IN) { inclusive = true }
                     }
                 },
-                onNavigateToTechnician = {                                    // ← add this
-                    navController.navigate("technician_dashboard") {
-                        popUpTo("login") { inclusive = true }
+                onNavigateToTechnician = {
+                    navController.navigate(TECHNICIAN_DASHBOARD) {
+                        popUpTo(LOG_IN) { inclusive = true }
                     }
                 },
-                onNavigateToFinance = {                                       // ← add this
-                    navController.navigate("finance_dashboard") {
-                        popUpTo("login") { inclusive = true }
+                onNavigateToFinance = {
+                    navController.navigate(FINANCE_DASHBOARD) {
+                        popUpTo(LOG_IN) { inclusive = true }
                     }
                 },
                 onNavigateToRegister = {
-                    navController.navigate("role_selection")
+                    navController.navigate(ROLE_SELECTION)
                 }
             )
         }
 
-
-        composable("register") {
+        // ── Register Company ──────────────────────────────────────────────────
+        composable(REGISTER_COMPANY) {
             RegisterCompanyScreen(
-                onBackToLogin = { navController.popBackStack() },
-                onRegistrationSuccess = { companyName ->   // ← receives companyName
+                onBackToLogin         = { navController.popBackStack() },
+                onRegistrationSuccess = { companyName ->
                     navController.navigate("pending_approval/$companyName") {
-                        popUpTo("register") { inclusive = true }
+                        popUpTo(REGISTER_COMPANY) { inclusive = true }
                     }
                 }
             )
         }
 
+        // ── Pending Approval ──────────────────────────────────────────────────
         composable("pending_approval/{companyName}") { backStackEntry ->
             val companyName = backStackEntry.arguments?.getString("companyName") ?: ""
             PendingApprovalScreen(
                 companyName = companyName,
                 submittedAt = System.currentTimeMillis(),
                 onLogout    = {
-                    navController.navigate("login") {
+                    navController.navigate(LOG_IN) {
                         popUpTo("pending_approval/{companyName}") { inclusive = true }
                     }
                 }
             )
         }
 
-
-        composable("super_admin") {
+        // ── Super Admin ───────────────────────────────────────────────────────
+        composable(SUPER_ADMIN) {
             SuperAdminScreen(
-                onPendingClick = { navController.navigate("pending_companies") },
-                onApprovedClick = { navController.navigate("approved_companies") },
-                onAnalyticsClick = { navController.navigate("system_analytics") },
-                onLogout = {
-                    navController.navigate("login") {
-                        popUpTo("super_admin") { inclusive = true }
+                onPendingClick   = { navController.navigate("pending_companies") },
+                onApprovedClick  = { navController.navigate(APPROVED_COMPANIES) },
+                onAnalyticsClick = { navController.navigate(SYSTEM_ANALYTICS) },
+                onLogout         = {
+                    navController.navigate(LOG_IN) {
+                        popUpTo(SUPER_ADMIN) { inclusive = true }
                     }
                 }
             )
         }
 
-
+        // ── Pending Companies ─────────────────────────────────────────────────
         composable("pending_companies") {
             PendingCompaniesScreen(
                 onBack = { navController.popBackStack() }
             )
         }
 
-        // ── Approved Companies ────────────
-        composable("approved_companies") {
+        // ── Approved Companies ────────────────────────────────────────────────
+        composable(APPROVED_COMPANIES) {
             ApprovedCompaniesScreen(
                 onBack = { navController.popBackStack() }
             )
         }
 
-        // ── System Analytics ──────────────
-        composable("system_analytics") {
+        // ── System Analytics ──────────────────────────────────────────────────
+        composable(SYSTEM_ANALYTICS) {
             SystemAnalyticsScreen(
                 onBack = { navController.popBackStack() }
             )
         }
 
-        // ── Admin Dashboard ───────────────
-
-
-        composable("admin") {
+        // ── Admin Dashboard ───────────────────────────────────────────────────
+        composable(ADMIN) {
             val adminViewModel: AdminViewModel = viewModel()
             val state by adminViewModel.state.collectAsState()
 
             when (val s = state) {
 
                 is AdminDashboardState.Loading -> {
-                    // ← fixes white screen during loading
                     Box(
                         modifier         = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -171,7 +177,6 @@ fun AppNavHost() {
                 }
 
                 is AdminDashboardState.Error -> {
-                    // ← fixes white screen on error — shows actual error message
                     Box(
                         modifier         = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -194,20 +199,32 @@ fun AppNavHost() {
                 is AdminDashboardState.Success -> {
                     if (s.data.companyStatus == "Approved") {
                         AdminDashboardScreen(
-                            onLogout = {
-                                navController.navigate("login") {
-                                    popUpTo("admin") { inclusive = true }
+                            onLogout          = {
+                                navController.navigate(LOG_IN) {
+                                    popUpTo(ADMIN) { inclusive = true }
                                 }
                             },
-                            onStaff = {navController.navigate("staff")}
+                            onInstitutions    = { navController.navigate(INSTITUTIONS) },
+                            onSubscriptions   = { navController.navigate(SUBSCRIPTIONS) },
+                            onPlans           = { navController.navigate(PLANS) },
+                            onPayments        = { navController.navigate(PAYMENTS) },
+                            onInvoices        = { navController.navigate(INVOICES) },
+                            onStaff           = { navController.navigate(STAFF) },
+                            onTechnicians     = { navController.navigate("technicians") },
+                            onSupportTickets  = { navController.navigate("tickets") },
+                            onAnalytics       = { navController.navigate("analytics") },
+                            onReports         = { navController.navigate(REPORTS) },
+                            onRevenue         = { navController.navigate("revenue") },
+                            onCompanySettings = { navController.navigate("company_settings") },
+                            onProfile         = { navController.navigate("profile") }
                         )
                     } else {
                         PendingApprovalScreen(
                             companyName = s.data.companyName,
                             submittedAt = s.data.submittedAt ?: System.currentTimeMillis(),
                             onLogout    = {
-                                navController.navigate("login") {
-                                    popUpTo("admin") { inclusive = true }
+                                navController.navigate(LOG_IN) {
+                                    popUpTo(ADMIN) { inclusive = true }
                                 }
                             }
                         )
@@ -216,53 +233,54 @@ fun AppNavHost() {
             }
         }
 
-        // ── Staff Register ────────────────────────────────────────────────────────
-        composable("staff_register") {
+        // ── Staff Register ────────────────────────────────────────────────────
+        composable(STAFF_REGISTER) {
             StaffRegisterScreen(
-                onBackToLogin          = { navController.popBackStack() },
-                onRegistrationSuccess  = {
-                    navController.navigate("staff_waiting") {
-                        popUpTo("staff_register") { inclusive = true }
+                onBackToLogin         = { navController.popBackStack() },
+                onRegistrationSuccess = {
+                    navController.navigate(STAFF_WAITING) {
+                        popUpTo(STAFF_REGISTER) { inclusive = true }
                     }
                 }
             )
         }
 
-// ── Staff Waiting ─────────────────────────────────────────────────────────
-        composable("staff_waiting") {
+        // ── Staff Waiting ─────────────────────────────────────────────────────
+        composable(STAFF_WAITING) {
             StaffWaitingScreen(
                 onLogout  = {
-                    navController.navigate("login") {
+                    navController.navigate(LOG_IN) {
                         popUpTo(0) { inclusive = true }
                     }
                 },
                 onRefresh = {
-                    navController.navigate("login") {
+                    navController.navigate(LOG_IN) {
                         popUpTo(0) { inclusive = true }
                     }
                 }
             )
         }
 
-// ── Staff Rejected ────────────────────────────────────────────────────────
-        composable("staff_rejected") {
+        // ── Staff Rejected ────────────────────────────────────────────────────
+        composable(STAFF_REJECTED) {
             StaffRejectedScreen(
                 onLogout = {
-                    navController.navigate("login") {
+                    navController.navigate(LOG_IN) {
                         popUpTo(0) { inclusive = true }
                     }
                 }
             )
         }
 
-        composable("staff") {
+        // ── Manage Staff ──────────────────────────────────────────────────────
+        composable(STAFF) {
             ManageStaffScreen(
                 onBack = { navController.popBackStack() }
             )
         }
 
-        // ── Technician Dashboard ──────────────────────────────────────────────────────
-        composable("technician_dashboard") {
+        // ── Technician Dashboard ──────────────────────────────────────────────
+        composable(TECHNICIAN_DASHBOARD) {
             TechnicianDashboardScreen(
                 onTicketClick    = { },
                 onViewAllTickets = { },
@@ -271,38 +289,119 @@ fun AppNavHost() {
             )
         }
 
-// ── Finance Dashboard ─────────────────────────────────────────────────────────
-        composable("finance_dashboard") {
+        // ── Finance Dashboard ─────────────────────────────────────────────────
+        composable(FINANCE_DASHBOARD) {
             FinanceDashboardScreen(
-                onNavigateToPayments  = { navController.navigate("payments") },
-                onNavigateToInvoices  = { navController.navigate("invoices") },
-                onNavigateToReports   = { navController.navigate("reports") },
-                onNavigateToMore      = { navController.navigate("more") },
-                onMenuClick           = { navController.navigate("menu") },
-                onPaymentClick        = { payment -> navController.navigate("payment_detail/${payment.id}") },
-                onViewAllPayments     = { navController.navigate("payments") },
-                onViewAllDefaulters   = { navController.navigate("defaulters") },
-                onRecordPayment       = { navController.navigate("record_payment") },
-                onGenerateInvoice     = { navController.navigate("generate_invoice") },
-                onExportReport        = { navController.navigate("export_report") },
-                onViewDefaulters      = { navController.navigate("defaulters") },
+                onNavigateToPayments  = { navController.navigate(PAYMENTS) },
+                onNavigateToInvoices  = { navController.navigate(INVOICES) },
+                onNavigateToReports   = { navController.navigate(REPORTS) },
+                onNavigateToMore      = { navController.navigate(MORE) },
+                onBack                = { navController.popBackStack() },
+                onPaymentClick        = { payment ->
+                    navController.navigate("payment_detail/${payment.id}")
+                },
+                onViewAllPayments     = { navController.navigate(PAYMENTS) },
+                onViewAllDefaulters   = { navController.navigate(DEFAULTERS) },
+                onRecordPayment       = { navController.navigate(RECORD_PAYMENT) },
+                onGenerateInvoice     = { navController.navigate(GENERATE_INVOICE) },
+                onExportReport        = { navController.navigate(EXPORT_REPORT) },
+                onViewDefaulters      = { navController.navigate(DEFAULTERS) }
             )
         }
 
-        composable("payments")         { /* PaymentsScreen() */ }
-        composable("invoices")         { /* InvoicesScreen() */ }
-        composable("reports")          { /* ReportsScreen() */ }
-        composable("more")             { /* MoreScreen() */ }
-        composable("defaulters")       { /* DefaultersScreen() */ }
-        composable("record_payment")   { /* RecordPaymentScreen() */ }
-        composable("generate_invoice") { /* GenerateInvoiceScreen() */ }
-        composable("export_report")    { /* ExportReportScreen() */ }
+        // ── Plans ─────────────────────────────────────────────────────────────
+        composable(PLANS) {
+            PlansScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
 
+        // ── Institutions ──────────────────────────────────────────────────────
+        composable(INSTITUTIONS) {
+            InstitutionsScreen(
+                onBack      = { navController.popBackStack() },
+                onMenuClick = { navController.popBackStack() }
+            )
+        }
+
+        // ── Subscriptions ─────────────────────────────────────────────────────
+        composable(SUBSCRIPTIONS) {
+            SubscriptionsScreen(
+                onBack      = { navController.popBackStack() },
+                onMenuClick = { navController.popBackStack() }
+            )
+        }
+
+        // ── Record Payment ────────────────────────────────────────────────────
+        composable(RECORD_PAYMENT) {
+            RecordPaymentScreen(
+                onBack    = { navController.popBackStack() },
+                onSuccess = {
+                    navController.popBackStack()   // goes back to Finance Dashboard
+                }
+            )
+        }
+
+        // ── Payments ──────────────────────────────────────────────────────────
+        composable(PAYMENTS) {
+            PaymentsScreen(onBack    = { navController.popBackStack() })
+        }
+
+        // ── Invoices ──────────────────────────────────────────────────────────
+        composable(INVOICES) {
+            InvoicesScreen(onBack    = { navController.popBackStack() })
+        }
+
+        // ── Reports ───────────────────────────────────────────────────────────
+        composable(REPORTS) {
+            ReportsScreen(onBack    = { navController.popBackStack() })
+
+        }
+
+        // ── More ──────────────────────────────────────────────────────────────
+        composable(MORE) {
+            // TODO: MoreScreen — replace Box with MoreScreen() when ready
+            Box(
+                modifier         = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) { Text("More Screen — Coming Soon") }
+        }
+
+        // ── Defaulters ────────────────────────────────────────────────────────
+        composable(DEFAULTERS) {
+            // TODO: DefaultersScreen — replace Box with DefaultersScreen() when ready
+            Box(
+                modifier         = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) { Text("Defaulters Screen — Coming Soon") }
+        }
+
+        // ── Generate Invoice ──────────────────────────────────────────────────
+        composable(GENERATE_INVOICE) {
+            // TODO: GenerateInvoiceScreen — replace Box when ready
+            Box(
+                modifier         = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) { Text("Generate Invoice — Coming Soon") }
+        }
+
+        // ── Export Report ─────────────────────────────────────────────────────
+        composable(EXPORT_REPORT) {
+            // TODO: ExportReportScreen — replace Box when ready
+            Box(
+                modifier         = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) { Text("Export Report — Coming Soon") }
+        }
+
+        // ── Payment Detail ────────────────────────────────────────────────────
         composable("payment_detail/{id}") { backStackEntry ->
-            val id = backStackEntry.arguments?.getString("id")
-            /* PaymentDetailScreen(paymentId = id) */
+            val id = backStackEntry.arguments?.getString("id") ?: ""
+            // TODO: PaymentDetailScreen(paymentId = id)
+            Box(
+                modifier         = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) { Text("Payment Detail: $id — Coming Soon") }
         }
     }
-
-
 }

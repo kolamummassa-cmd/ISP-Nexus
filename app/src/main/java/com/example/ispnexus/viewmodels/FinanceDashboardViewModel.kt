@@ -8,8 +8,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
 // ─── Data Models ─────────────────────────────────────────────────────────────
@@ -63,12 +61,16 @@ data class FinanceDashboardUiState(
     val topDefaulters: List<DefaulterItem> = emptyList(),
 
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
-)
+    val errorMessage: String? = null,
+    val companyLogoUrl: String,
+
+    ) {
+//    val companyLogoUrl: String = ""
+}
 
 class FinanceDashboardViewModel : ViewModel() {
 
-    private val _uiState = MutableStateFlow(FinanceDashboardUiState())
+    private val _uiState = MutableStateFlow(FinanceDashboardUiState(companyLogoUrl = ""))
     val uiState: StateFlow<FinanceDashboardUiState> = _uiState.asStateFlow()
 
     init {
@@ -89,39 +91,99 @@ class FinanceDashboardViewModel : ViewModel() {
 
                 // Fetch company name
                 val companyDoc  = db.collection("companies").document(companyId).get().await()
+                val companyLogoUrl = companyDoc.getString("logoUrl") ?: ""
                 val companyName = companyDoc.getString("companyName") ?: ""
 
                 // Keep sample data for now — replace with real Firestore calls later
-                val payments = listOf(
-                    PaymentHistoryItem("1", "Greenfield School",   "INV-2024-128", 1200.00, "24 May 2024", "Paid",    "Bank Transfer"),
-                    PaymentHistoryItem("2", "Sunrise Academy",     "INV-2024-127",  950.00, "24 May 2024", "Pending", ""),
-                    PaymentHistoryItem("3", "City College",        "INV-2024-126", 1500.00, "23 May 2024", "Paid",    "Mobile Money"),
-                    PaymentHistoryItem("4", "Blue Valley School",  "INV-2024-125",  800.00, "23 May 2024", "Pending", ""),
-                    PaymentHistoryItem("5", "Bright Future Inst.", "INV-2024-124", 1100.00, "22 May 2024", "Paid",    "Bank Transfer"),
-                )
+                // ── Recent Payments (last 5) ──────────────────────────────────────
+                val paymentsSnapshot = db.collection("payments")
+                    .whereEqualTo("companyId", companyId)
+                    .orderBy("date", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                    .limit(5)
+                    .get()
+                    .await()
 
-                val revenuePoints = listOf(
-                    RevenuePoint("Jan", 10000.0),
-                    RevenuePoint("Feb", 18000.0),
-                    RevenuePoint("Mar", 20000.0),
-                    RevenuePoint("Apr", 26000.0),
-                    RevenuePoint("May", 38000.0),
-                    RevenuePoint("Jun", 22000.0),
-                )
+                val payments = paymentsSnapshot.documents.map { doc ->
+                    PaymentHistoryItem(
+                        id              = doc.id,
+                        institutionName = doc.getString("institutionName") ?: "",
+                        invoiceNumber   = doc.getString("invoiceNumber")   ?: "",
+                        amount          = doc.getDouble("amount")          ?: 0.0,
+                        date            = doc.getString("date")            ?: "",
+                        status          = doc.getString("status")          ?: "Pending",
+                        paymentMethod   = doc.getString("paymentMethod")   ?: ""
+                    )
+                }
 
-                val defaulters = listOf(
-                    DefaulterItem(1, "Greenfield School", 1200.00, 45),
-                    DefaulterItem(2, "City College",       950.00, 30),
-                    DefaulterItem(3, "Sunrise Academy",    750.00, 25),
-                )
+// ── All Payments for stats ────────────────────────────────────────
+                val allPaymentsSnapshot = db.collection("payments")
+                    .whereEqualTo("companyId", companyId)
+                    .get()
+                    .await()
 
+                val allDocs       = allPaymentsSnapshot.documents
+                val totalRevenue  = allDocs.filter   { it.getString("status") == "Paid" }
+                    .sumOf    { it.getDouble("amount") ?: 0.0 }
+                val pendingAmount = allDocs.filter   { it.getString("status") == "Pending" }
+                    .sumOf    { it.getDouble("amount") ?: 0.0 }
+                val pendingCount  = allDocs.count    { it.getString("status") == "Pending" }
+
+// ── Paid Today ────────────────────────────────────────────────────
+                val todayStr       = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
+                    .format(java.util.Date())
+                val paidTodayDocs  = allDocs.filter {
+                    it.getString("status") == "Paid" &&
+                            it.getString("date")   == todayStr
+                }
+                val paidTodayAmt   = paidTodayDocs.sumOf { it.getDouble("amount") ?: 0.0 }
+                val paidTodayCount = paidTodayDocs.size
+
+// ── Top Defaulters ────────────────────────────────────────────────
+                val defaultersSnapshot = db.collection("payments")
+                    .whereEqualTo("companyId", companyId)
+                    .whereEqualTo("status", "Overdue")
+                    .orderBy("amount", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                    .limit(3)
+                    .get()
+                    .await()
+
+                val defaulters = defaultersSnapshot.documents.mapIndexed { index, doc ->
+                    DefaulterItem(
+                        rank            = index + 1,
+                        institutionName = doc.getString("institutionName") ?: "",
+                        amountOwed      = doc.getDouble("amount")          ?: 0.0,
+                        daysOverdue     = doc.getLong("daysOverdue")?.toInt() ?: 0
+                    )
+                }
+
+// ── Revenue Chart — group Paid payments by month ──────────────────
+                val monthlyMap = mutableMapOf<String, Double>()
+                val monthFmt   = java.text.SimpleDateFormat("MMM", java.util.Locale.getDefault())
+                val dateFmt    = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
+
+                allDocs.filter { it.getString("status") == "Paid" }.forEach { doc ->
+                    try {
+                        val date  = dateFmt.parse(doc.getString("date") ?: "") ?: return@forEach
+                        val month = monthFmt.format(date)
+                        monthlyMap[month] = (monthlyMap[month] ?: 0.0) + (doc.getDouble("amount") ?: 0.0)
+                    } catch (e: Exception) { /* skip malformed dates */ }
+                }
+
+                val revenuePoints = monthlyMap.map { RevenuePoint(it.key, it.value) }
                 _uiState.value = _uiState.value.copy(
-                    isLoading      = false,
-                    officerName    = officerName,
-                    companyName    = companyName,    // ← add this
-                    recentPayments = payments,
-                    revenuePoints  = revenuePoints,
-                    topDefaulters  = defaulters
+                    isLoading           = false,
+                    officerName         = officerName,
+                    companyName         = companyName,
+                    companyLogoUrl = companyLogoUrl,
+                    totalRevenue        = totalRevenue,
+                    pendingPayments     = pendingAmount,
+                    pendingInvoiceCount = pendingCount,
+                    paidToday           = paidTodayAmt,
+                    paidTodayCount      = paidTodayCount,
+                    defaultersCount     = defaultersSnapshot.size(),
+                    recentPayments      = payments,
+                    revenuePoints       = revenuePoints,
+                    topDefaulters       = defaulters
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false)

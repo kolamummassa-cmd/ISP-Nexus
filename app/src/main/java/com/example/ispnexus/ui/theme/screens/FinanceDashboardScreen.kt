@@ -1,9 +1,6 @@
 package com.example.ispnexus.ui.theme.screens
 
-
-
 import androidx.compose.foundation.Canvas
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,18 +24,20 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.ispnexus.viewmodels.DefaulterItem
 import com.example.ispnexus.viewmodels.FinanceDashboardUiState
 import com.example.ispnexus.viewmodels.FinanceDashboardViewModel
 import com.example.ispnexus.viewmodels.PaymentHistoryItem
 import com.example.ispnexus.viewmodels.RevenuePoint
-import kotlin.math.roundToInt
 
 // ─── Color Palette ────────────────────────────────────────────────────────────
 private val PrimaryBlue   = Color(0xFF1565C0)
@@ -49,18 +48,17 @@ private val CardBg        = Color(0xFFFFFFFF)
 private val PageBg        = Color(0xFFF4F6FB)
 private val BorderColor   = Color(0xFFE8EAF0)
 private val DividerColor  = Color(0xFFF0F2F8)
-
-private val GreenText   = Color(0xFF2E7D32)
-private val GreenBg     = Color(0xFFE8F5E9)
-private val AmberText   = Color(0xFFF57F17)
-private val AmberBg     = Color(0xFFFFF8E1)
-private val RedText     = Color(0xFFC62828)
-private val RedBg       = Color(0xFFFFEBEE)
-private val PurpleText  = Color(0xFF6A1B9A)
-private val PurpleBg    = Color(0xFFF3E5F5)
-private val OnlineGreen = Color(0xFF43A047)
-private val OfflineRed  = Color(0xFFE53935)
-private val ChartBlue   = Color(0xFF1E88E5)
+private val GreenText     = Color(0xFF2E7D32)
+private val GreenBg       = Color(0xFFE8F5E9)
+private val AmberText     = Color(0xFFF57F17)
+private val AmberBg       = Color(0xFFFFF8E1)
+private val RedText       = Color(0xFFC62828)
+private val RedBg         = Color(0xFFFFEBEE)
+private val PurpleText    = Color(0xFF6A1B9A)
+private val PurpleBg      = Color(0xFFF3E5F5)
+private val OnlineGreen   = Color(0xFF43A047)
+private val OfflineRed    = Color(0xFFE53935)
+private val ChartBlue     = Color(0xFF1E88E5)
 
 // ─── Currency Formatter ───────────────────────────────────────────────────────
 private fun formatKsh(amount: Double): String {
@@ -83,7 +81,7 @@ fun FinanceDashboardScreen(
     onViewDefaulters: () -> Unit = {},
     onViewAllPayments: () -> Unit = {},
     onViewAllDefaulters: () -> Unit = {},
-    onMenuClick: () -> Unit = {}
+    onBack: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var selectedNavItem by remember { mutableStateOf(0) }
@@ -92,10 +90,11 @@ fun FinanceDashboardScreen(
         containerColor = PageBg,
         topBar = {
             FinanceTopBar(
-                officerName = uiState.officerName,
-                companyName = uiState.companyName,
+                officerName       = uiState.officerName,
+                companyName       = uiState.companyName,
+                companyLogoUrl    = uiState.companyLogoUrl,
                 notificationCount = uiState.notificationCount,
-                onMenuClick = onMenuClick
+                onBack            = onBack
             )
         },
         bottomBar = {
@@ -115,7 +114,7 @@ fun FinanceDashboardScreen(
     ) { paddingValues ->
         if (uiState.isLoading) {
             Box(
-                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                modifier         = Modifier.fillMaxSize().padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(color = PrimaryBlue)
@@ -132,24 +131,24 @@ fun FinanceDashboardScreen(
                 FinanceStatsGrid(state = uiState)
                 Spacer(modifier = Modifier.height(14.dp))
                 PaymentHistorySection(
-                    payments = uiState.recentPayments,
-                    onViewAll = onViewAllPayments,
+                    payments       = uiState.recentPayments,
+                    onViewAll      = onViewAllPayments,
                     onPaymentClick = onPaymentClick
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 AnalyticsRow(
-                    revenuePoints = uiState.revenuePoints,
-                    totalRevenue = uiState.totalRevenue,
-                    revenueChange = uiState.totalRevenueChange,
-                    defaulters = uiState.topDefaulters,
+                    revenuePoints       = uiState.revenuePoints,
+                    totalRevenue        = uiState.totalRevenue,
+                    revenueChange       = uiState.totalRevenueChange,
+                    defaulters          = uiState.topDefaulters,
                     onViewAllDefaulters = onViewAllDefaulters
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 QuickActionsSection(
-                    onRecordPayment = onRecordPayment,
+                    onRecordPayment   = onRecordPayment,
                     onGenerateInvoice = onGenerateInvoice,
-                    onExportReport = onExportReport,
-                    onViewDefaulters = onViewDefaulters
+                    onExportReport    = onExportReport,
+                    onViewDefaulters  = onViewDefaulters
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -162,19 +161,25 @@ fun FinanceDashboardScreen(
 @Composable
 private fun FinanceTopBar(
     officerName: String,
-    companyName: String = "",
+    companyName: String,
+    companyLogoUrl: String,
     notificationCount: Int,
-    onMenuClick: () -> Unit
+    onBack: () -> Unit
 ) {
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(containerColor = CardBg),
         navigationIcon = {
-            IconButton(onClick = onMenuClick) {
-                Icon(Icons.Default.Menu, contentDescription = "Menu", tint = TextPrimary)
+            IconButton(onClick = onBack) {
+                Icon(
+                    Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    tint = TextPrimary
+                )
             }
         },
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Company Logo — shows logo if available, else shows initials box
                 Box(
                     modifier = Modifier
                         .size(36.dp)
@@ -182,19 +187,52 @@ private fun FinanceTopBar(
                         .background(PrimaryBlue),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Wifi, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    if (companyLogoUrl.isNotEmpty()) {
+                        AsyncImage(
+                            model             = companyLogoUrl,
+                            contentDescription = "Company Logo",
+                            contentScale      = ContentScale.Crop,
+                            modifier          = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        // Fallback — first letter of company name
+                        Text(
+                            text       = companyName.firstOrNull()?.toString() ?: "I",
+                            fontSize   = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color      = Color.White
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Column {
-                    Text(companyName.ifEmpty { "ISP NEXUS" }, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PrimaryBlue, letterSpacing = 0.5.sp)
-                    Text("CONNECT · MANAGE · GROW", fontSize = 8.sp, color = TextSecondary, letterSpacing = 0.8.sp)
+                    Text(
+                        text         = companyName.ifEmpty { "ISP NEXUS" },
+                        fontSize     = 13.sp,
+                        fontWeight   = FontWeight.Bold,
+                        color        = PrimaryBlue,
+                        letterSpacing = 0.5.sp,
+                        maxLines     = 1,
+                        overflow     = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text          = "CONNECT · MANAGE · GROW",
+                        fontSize      = 8.sp,
+                        color         = TextSecondary,
+                        letterSpacing = 0.8.sp
+                    )
                 }
             }
         },
         actions = {
+            // Notification Bell
             Box {
                 IconButton(onClick = {}) {
-                    Icon(Icons.Outlined.Notifications, contentDescription = "Notifications", tint = TextPrimary)
+                    Icon(
+                        Icons.Outlined.Notifications,
+                        contentDescription = "Notifications",
+                        tint = TextPrimary
+                    )
                 }
                 if (notificationCount > 0) {
                     Box(
@@ -207,11 +245,21 @@ private fun FinanceTopBar(
                             .border(1.5.dp, Color.White, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(notificationCount.toString(), fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(
+                            notificationCount.toString(),
+                            fontSize   = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            color      = Color.White
+                        )
                     }
                 }
             }
-            val initials = officerName.split(" ").take(2).mapNotNull { it.firstOrNull()?.toString() }.joinToString("")
+            // Officer Avatar — initials
+            val initials = officerName
+                .split(" ")
+                .take(2)
+                .mapNotNull { it.firstOrNull()?.toString() }
+                .joinToString("")
             Box(
                 modifier = Modifier
                     .padding(end = 8.dp)
@@ -221,7 +269,12 @@ private fun FinanceTopBar(
                     .border(2.dp, Color.White, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text(initials, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                Text(
+                    initials,
+                    fontSize   = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color      = Color.White
+                )
             }
         }
     )
@@ -247,70 +300,69 @@ private fun WelcomeHeader(officerName: String) {
     }
 }
 
-// ─── Stats Grid ───────────────────────────────────────────────────────────────
+// ─── Stats Grid — all 4 cards same size horizontally ─────────────────────────
 @Composable
 private fun FinanceStatsGrid(state: FinanceDashboardUiState) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Left column
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            FinanceStatCard(
-                label = "Total Revenue",
-                labelColor = GreenText,
-                iconBg = GreenBg,
-                icon = Icons.Outlined.TrendingUp,
-                iconTint = GreenText,
-                primaryValue = formatKsh(state.totalRevenue),
-                subValue = "This Month",
-                change = "▲ ${state.totalRevenueChange}%",
-                changeColor = OnlineGreen
-            )
-            FinanceStatCard(
-                label = "Defaulters",
-                labelColor = RedText,
-                iconBg = RedBg,
-                icon = Icons.Outlined.Group,
-                iconTint = RedText,
-                primaryValue = state.defaultersCount.toString(),
-                subValue = "Institutions",
-                change = "▲ ${state.newDefaulters} new",
-                changeColor = OfflineRed
-            )
-        }
-        // Right column
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            FinanceStatCard(
-                label = "Pending Payments",
-                labelColor = AmberText,
-                iconBg = AmberBg,
-                icon = Icons.Outlined.Schedule,
-                iconTint = AmberText,
-                primaryValue = formatKsh(state.pendingPayments),
-                subValue = "${state.pendingInvoiceCount} Invoices",
-                change = "▲ ${state.pendingPaymentsChange}%",
-                changeColor = AmberText
-            )
-            FinanceStatCard(
-                label = "Paid Today",
-                labelColor = PrimaryBlue,
-                iconBg = LightBlue,
-                icon = Icons.Outlined.CreditCard,
-                iconTint = PrimaryBlue,
-                primaryValue = formatKsh(state.paidToday),
-                subValue = "${state.paidTodayCount} Payments",
-                change = "▲ ${state.paidTodayChange}%",
-                changeColor = OnlineGreen
-            )
-        }
+        FinanceStatCard(
+            modifier    = Modifier.weight(1f),
+            label       = "Total Revenue",
+            labelColor  = GreenText,
+            iconBg      = GreenBg,
+            icon        = Icons.Outlined.TrendingUp,
+            iconTint    = GreenText,
+            primaryValue = formatKsh(state.totalRevenue),
+            subValue    = "This Month",
+            change      = "▲ ${state.totalRevenueChange}%",
+            changeColor = OnlineGreen
+        )
+        FinanceStatCard(
+            modifier    = Modifier.weight(1f),
+            label       = "Pending",
+            labelColor  = AmberText,
+            iconBg      = AmberBg,
+            icon        = Icons.Outlined.Schedule,
+            iconTint    = AmberText,
+            primaryValue = formatKsh(state.pendingPayments),
+            subValue    = "${state.pendingInvoiceCount} Invoices",
+            change      = "▲ ${state.pendingPaymentsChange}%",
+            changeColor = AmberText
+        )
+        FinanceStatCard(
+            modifier    = Modifier.weight(1f),
+            label       = "Defaulters",
+            labelColor  = RedText,
+            iconBg      = RedBg,
+            icon        = Icons.Outlined.Group,
+            iconTint    = RedText,
+            primaryValue = state.defaultersCount.toString(),
+            subValue    = "Institutions",
+            change      = "▲ ${state.newDefaulters} new",
+            changeColor = OfflineRed
+        )
+        FinanceStatCard(
+            modifier    = Modifier.weight(1f),
+            label       = "Paid Today",
+            labelColor  = PrimaryBlue,
+            iconBg      = LightBlue,
+            icon        = Icons.Outlined.CreditCard,
+            iconTint    = PrimaryBlue,
+            primaryValue = formatKsh(state.paidToday),
+            subValue    = "${state.paidTodayCount} Payments",
+            change      = "▲ ${state.paidTodayChange}%",
+            changeColor = OnlineGreen
+        )
     }
 }
 
 @Composable
 private fun FinanceStatCard(
+    modifier: Modifier = Modifier,
     label: String,
     labelColor: Color,
     iconBg: Color,
@@ -322,31 +374,39 @@ private fun FinanceStatCard(
     changeColor: Color
 ) {
     Card(
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBg),
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, BorderColor),
+        modifier  = modifier,
+        shape     = RoundedCornerShape(14.dp),
+        colors    = CardDefaults.cardColors(containerColor = CardBg),
+        border    = androidx.compose.foundation.BorderStroke(0.5.dp, BorderColor),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = labelColor)
-            Spacer(modifier = Modifier.height(8.dp))
+        Column(
+            modifier            = Modifier.padding(10.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(label, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = labelColor, maxLines = 1)
+            Spacer(modifier = Modifier.height(6.dp))
             Box(
-                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(iconBg),
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(RoundedCornerShape(7.dp))
+                    .background(iconBg),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(18.dp))
+                Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(16.dp))
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = primaryValue,
-                fontSize = if (primaryValue.length > 10) 13.sp else 18.sp,
+                text       = primaryValue,
+                fontSize   = 11.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary,
-                maxLines = 1
+                color      = TextPrimary,
+                maxLines   = 1,
+                overflow   = TextOverflow.Ellipsis
             )
-            Text(subValue, fontSize = 10.sp, color = TextSecondary)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(change, fontSize = 10.sp, color = changeColor, fontWeight = FontWeight.SemiBold)
+            Text(subValue, fontSize = 9.sp, color = TextSecondary, maxLines = 1)
+            Spacer(modifier = Modifier.height(3.dp))
+            Text(change, fontSize = 9.sp, color = changeColor, fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -359,10 +419,19 @@ private fun PaymentHistorySection(
     onPaymentClick: (PaymentHistoryItem) -> Unit
 ) {
     SectionCard(title = "Recent Payment History", onViewAll = onViewAll) {
-        payments.forEachIndexed { index, payment ->
-            PaymentRow(payment = payment, onClick = { onPaymentClick(payment) })
-            if (index < payments.lastIndex) {
-                HorizontalDivider(color = DividerColor, thickness = 0.5.dp)
+        if (payments.isEmpty()) {
+            Box(
+                modifier         = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("No payments yet", fontSize = 13.sp, color = TextSecondary)
+            }
+        } else {
+            payments.forEachIndexed { index, payment ->
+                PaymentRow(payment = payment, onClick = { onPaymentClick(payment) })
+                if (index < payments.lastIndex) {
+                    HorizontalDivider(color = DividerColor, thickness = 0.5.dp)
+                }
             }
         }
     }
@@ -375,10 +444,9 @@ private fun PaymentRow(payment: PaymentHistoryItem, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Institution Icon
         val (iconBg, iconTint) = when (payment.status) {
             "Paid"    -> GreenBg to GreenText
             "Pending" -> AmberBg to AmberText
@@ -390,29 +458,20 @@ private fun PaymentRow(payment: PaymentHistoryItem, onClick: () -> Unit) {
         ) {
             Icon(Icons.Outlined.AccountBalance, contentDescription = null, tint = iconTint, modifier = Modifier.size(20.dp))
         }
-
-        // Name + Invoice
         Column(modifier = Modifier.weight(1f)) {
             Text(payment.institutionName, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(payment.invoiceNumber, fontSize = 11.sp, color = PrimaryBlue)
         }
-
-        // Amount + Date
         Column(horizontalAlignment = Alignment.End) {
             Text(formatKsh(payment.amount), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
             Text(payment.date, fontSize = 10.sp, color = TextSecondary)
         }
-
-        // Status Badge
         StatusBadge(status = payment.status)
-
-        // Payment Method
         if (payment.paymentMethod.isNotEmpty()) {
             Text(payment.paymentMethod, fontSize = 10.sp, color = TextSecondary, maxLines = 1)
         } else {
-            Text("–", fontSize = 10.sp, color = TextSecondary)
+            Text("-", fontSize = 10.sp, color = TextSecondary)
         }
-
         Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFFC5CAE9), modifier = Modifier.size(18.dp))
     }
 }
@@ -431,7 +490,7 @@ private fun StatusBadge(status: String) {
     }
 }
 
-// ─── Analytics Row (Chart + Defaulters) ──────────────────────────────────────
+// ─── Analytics Row ────────────────────────────────────────────────────────────
 @Composable
 private fun AnalyticsRow(
     revenuePoints: List<RevenuePoint>,
@@ -441,24 +500,22 @@ private fun AnalyticsRow(
     onViewAllDefaulters: () -> Unit
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier              = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         // Revenue Chart Card
         Card(
-            modifier = Modifier.weight(1.1f),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = CardBg),
-            border = androidx.compose.foundation.BorderStroke(0.5.dp, BorderColor),
+            modifier  = Modifier.weight(1.1f),
+            shape     = RoundedCornerShape(16.dp),
+            colors    = CardDefaults.cardColors(containerColor = CardBg),
+            border    = androidx.compose.foundation.BorderStroke(0.5.dp, BorderColor),
             elevation = CardDefaults.cardElevation(0.dp)
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier              = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment     = Alignment.CenterVertically
                 ) {
                     Text("Monthly Revenue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                     Box(
@@ -474,12 +531,26 @@ private fun AnalyticsRow(
                 Text(formatKsh(totalRevenue), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                 Text("▲ $revenueChange%", fontSize = 10.sp, color = OnlineGreen, fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.height(8.dp))
-                RevenueLineChart(points = revenuePoints, modifier = Modifier.fillMaxWidth().height(100.dp))
-                Spacer(modifier = Modifier.height(4.dp))
-                // X-axis labels
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    revenuePoints.forEach { point ->
-                        Text(point.month, fontSize = 8.sp, color = TextSecondary)
+                if (revenuePoints.isEmpty()) {
+                    Box(
+                        modifier         = Modifier.fillMaxWidth().height(100.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No data yet", fontSize = 11.sp, color = TextSecondary)
+                    }
+                } else {
+                    RevenueLineChart(
+                        points   = revenuePoints,
+                        modifier = Modifier.fillMaxWidth().height(100.dp)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier              = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        revenuePoints.forEach { point ->
+                            Text(point.month, fontSize = 8.sp, color = TextSecondary)
+                        }
                     }
                 }
             }
@@ -487,25 +558,40 @@ private fun AnalyticsRow(
 
         // Defaulters Card
         Card(
-            modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = CardBg),
-            border = androidx.compose.foundation.BorderStroke(0.5.dp, BorderColor),
+            modifier  = Modifier.weight(1f),
+            shape     = RoundedCornerShape(16.dp),
+            colors    = CardDefaults.cardColors(containerColor = CardBg),
+            border    = androidx.compose.foundation.BorderStroke(0.5.dp, BorderColor),
             elevation = CardDefaults.cardElevation(0.dp)
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier              = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment     = Alignment.CenterVertically
                 ) {
                     Text("Top Defaulters", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                    Text("View All", fontSize = 10.sp, color = PrimaryBlue, fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable { onViewAllDefaulters() })
+                    Text(
+                        "View All",
+                        fontSize   = 10.sp,
+                        color      = PrimaryBlue,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier   = Modifier.clickable { onViewAllDefaulters() }
+                    )
                 }
                 Spacer(modifier = Modifier.height(10.dp))
-                defaulters.forEach { defaulter ->
-                    DefaulterRow(defaulter = defaulter)
-                    Spacer(modifier = Modifier.height(10.dp))
+                if (defaulters.isEmpty()) {
+                    Box(
+                        modifier         = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No defaulters", fontSize = 11.sp, color = TextSecondary)
+                    }
+                } else {
+                    defaulters.forEach { defaulter ->
+                        DefaulterRow(defaulter = defaulter)
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
                 }
             }
         }
@@ -515,23 +601,16 @@ private fun AnalyticsRow(
 @Composable
 private fun DefaulterRow(defaulter: DefaulterItem) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
+        modifier              = Modifier.fillMaxWidth(),
+        verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(
-            text = "${defaulter.rank}",
-            fontSize = 11.sp,
-            color = TextSecondary,
-            modifier = Modifier.width(12.dp)
-        )
+        Text("${defaulter.rank}", fontSize = 11.sp, color = TextSecondary, modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(defaulter.institutionName, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text("${defaulter.daysOverdue} Days", fontSize = 10.sp, color = TextSecondary)
         }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(formatKsh(defaulter.amountOwed), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RedText)
-        }
+        Text(formatKsh(defaulter.amountOwed), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RedText)
     }
 }
 
@@ -539,20 +618,16 @@ private fun DefaulterRow(defaulter: DefaulterItem) {
 @Composable
 private fun RevenueLineChart(points: List<RevenuePoint>, modifier: Modifier = Modifier) {
     if (points.isEmpty()) return
-
     Canvas(modifier = modifier) {
         val maxVal = points.maxOf { it.amount }
-        val minVal = 0.0
-        val range  = (maxVal - minVal).coerceAtLeast(1.0)
-
-        val stepX = size.width / (points.size - 1).coerceAtLeast(1)
+        val range  = maxVal.coerceAtLeast(1.0)
+        val stepX  = size.width / (points.size - 1).coerceAtLeast(1)
         val offsets = points.mapIndexed { i, pt ->
-            val x = i * stepX
-            val y = size.height - ((pt.amount - minVal) / range * size.height).toFloat()
-            Offset(x, y)
+            Offset(
+                x = i * stepX,
+                y = size.height - (pt.amount / range * size.height).toFloat()
+            )
         }
-
-        // Fill path
         val fillPath = Path().apply {
             moveTo(offsets.first().x, size.height)
             offsets.forEach { lineTo(it.x, it.y) }
@@ -560,26 +635,17 @@ private fun RevenueLineChart(points: List<RevenuePoint>, modifier: Modifier = Mo
             close()
         }
         drawPath(
-            path = fillPath,
+            path  = fillPath,
             brush = Brush.verticalGradient(
                 colors = listOf(ChartBlue.copy(alpha = 0.25f), Color.Transparent),
-                startY = 0f,
-                endY = size.height
+                startY = 0f, endY = size.height
             )
         )
-
-        // Line
         val linePath = Path().apply {
             moveTo(offsets.first().x, offsets.first().y)
             offsets.drop(1).forEach { lineTo(it.x, it.y) }
         }
-        drawPath(
-            path = linePath,
-            color = ChartBlue,
-            style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round)
-        )
-
-        // Dots
+        drawPath(linePath, color = ChartBlue, style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round))
         offsets.forEach { offset ->
             drawCircle(color = ChartBlue, radius = 4.dp.toPx(), center = offset)
             drawCircle(color = Color.White, radius = 2.dp.toPx(), center = offset)
@@ -599,41 +665,13 @@ private fun QuickActionsSection(
         Text("Quick Actions", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
         Spacer(modifier = Modifier.height(10.dp))
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier              = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            QuickActionItem(
-                modifier = Modifier.weight(1f),
-                label = "Record Payment",
-                icon = Icons.Outlined.Receipt,
-                iconBg = GreenBg,
-                iconTint = GreenText,
-                onClick = onRecordPayment
-            )
-            QuickActionItem(
-                modifier = Modifier.weight(1f),
-                label = "Generate Invoice",
-                icon = Icons.Outlined.Description,
-                iconBg = LightBlue,
-                iconTint = PrimaryBlue,
-                onClick = onGenerateInvoice
-            )
-            QuickActionItem(
-                modifier = Modifier.weight(1f),
-                label = "Export Report",
-                icon = Icons.Outlined.FileDownload,
-                iconBg = PurpleBg,
-                iconTint = PurpleText,
-                onClick = onExportReport
-            )
-            QuickActionItem(
-                modifier = Modifier.weight(1f),
-                label = "View Defaulters",
-                icon = Icons.Outlined.Group,
-                iconBg = AmberBg,
-                iconTint = AmberText,
-                onClick = onViewDefaulters
-            )
+            QuickActionItem(modifier = Modifier.weight(1f), label = "Record Payment",   icon = Icons.Outlined.Receipt,      iconBg = GreenBg,  iconTint = GreenText,  onClick = onRecordPayment)
+            QuickActionItem(modifier = Modifier.weight(1f), label = "Generate Invoice", icon = Icons.Outlined.Description,  iconBg = LightBlue, iconTint = PrimaryBlue, onClick = onGenerateInvoice)
+            QuickActionItem(modifier = Modifier.weight(1f), label = "Export Report",    icon = Icons.Outlined.FileDownload, iconBg = PurpleBg, iconTint = PurpleText, onClick = onExportReport)
+            QuickActionItem(modifier = Modifier.weight(1f), label = "View Defaulters",  icon = Icons.Outlined.Group,        iconBg = AmberBg,  iconTint = AmberText,  onClick = onViewDefaulters)
         }
     }
 }
@@ -664,7 +702,7 @@ private fun QuickActionItem(
             Icon(icon, contentDescription = label, tint = iconTint, modifier = Modifier.size(22.dp))
         }
         Spacer(modifier = Modifier.height(6.dp))
-        Text(label, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, color = iconTint, maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Text(label, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, color = iconTint, maxLines = 2, textAlign = TextAlign.Center)
     }
 }
 
@@ -676,17 +714,17 @@ private fun SectionCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBg),
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, BorderColor),
+        modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        shape     = RoundedCornerShape(16.dp),
+        colors    = CardDefaults.cardColors(containerColor = CardBg),
+        border    = androidx.compose.foundation.BorderStroke(0.5.dp, BorderColor),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier              = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment     = Alignment.CenterVertically
             ) {
                 Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                 Text("View All", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = PrimaryBlue, modifier = Modifier.clickable { onViewAll() })
@@ -704,45 +742,43 @@ private fun FinanceBottomNav(
     onItemSelected: (Int) -> Unit
 ) {
     data class NavItem(val label: String, val icon: ImageVector, val activeIcon: ImageVector)
-
     val items = listOf(
-        NavItem("Dashboard", Icons.Outlined.Home,           Icons.Filled.Home),
-        NavItem("Payments",  Icons.Outlined.AttachMoney,    Icons.Filled.AttachMoney),
-        NavItem("Invoices",  Icons.Outlined.Description,    Icons.Filled.Description),
-        NavItem("Reports",   Icons.Outlined.BarChart,       Icons.Filled.BarChart),
-        NavItem("More",      Icons.Outlined.MoreHoriz,      Icons.Filled.MoreHoriz),
+        NavItem("Dashboard", Icons.Outlined.Home,        Icons.Filled.Home),
+        NavItem("Payments",  Icons.Outlined.AttachMoney, Icons.Filled.AttachMoney),
+        NavItem("Invoices",  Icons.Outlined.Description, Icons.Filled.Description),
+        NavItem("Reports",   Icons.Outlined.BarChart,    Icons.Filled.BarChart),
+        NavItem("More",      Icons.Outlined.MoreHoriz,   Icons.Filled.MoreHoriz),
     )
-
     NavigationBar(
         containerColor = CardBg,
         tonalElevation = 0.dp,
-        modifier = Modifier.border(0.5.dp, BorderColor, RoundedCornerShape(0.dp))
+        modifier       = Modifier.border(0.5.dp, BorderColor, RoundedCornerShape(0.dp))
     ) {
         items.forEachIndexed { index, item ->
             val selected = selectedItem == index
             NavigationBarItem(
                 selected = selected,
-                onClick = { onItemSelected(index) },
-                icon = {
+                onClick  = { onItemSelected(index) },
+                icon     = {
                     Icon(
-                        imageVector = if (selected) item.activeIcon else item.icon,
+                        imageVector        = if (selected) item.activeIcon else item.icon,
                         contentDescription = item.label,
-                        modifier = Modifier.size(22.dp)
+                        modifier           = Modifier.size(22.dp)
                     )
                 },
-                label = {
+                label  = {
                     Text(
-                        text = item.label,
-                        fontSize = 9.sp,
+                        text       = item.label,
+                        fontSize   = 9.sp,
                         fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = PrimaryBlue,
-                    selectedTextColor = PrimaryBlue,
+                    selectedIconColor   = PrimaryBlue,
+                    selectedTextColor   = PrimaryBlue,
                     unselectedIconColor = TextSecondary,
                     unselectedTextColor = TextSecondary,
-                    indicatorColor = LightBlue
+                    indicatorColor      = LightBlue
                 )
             )
         }

@@ -155,15 +155,16 @@ fun StaffRegisterScreen(
 
                     // Company code with info
                     OutlinedTextField(
+                        supportingText = {
+                            Text("Ask your company admin for this code",
+                                fontSize = 11.sp, color = Color.Black)
+                        },
                         value         = companyCode,
                         onValueChange = { companyCode = it.uppercase() },
                         label         = { Text("Company Join Code") },
                         singleLine    = true,
                         isError       = registerState is StaffRegisterState.Error,
-                        supportingText = {
-                            Text("Ask your company admin for this code",
-                                fontSize = 11.sp, color = Color.Gray)
-                        },
+
                         modifier = Modifier.fillMaxWidth(),
                         shape    = RoundedCornerShape(12.dp)
                     )

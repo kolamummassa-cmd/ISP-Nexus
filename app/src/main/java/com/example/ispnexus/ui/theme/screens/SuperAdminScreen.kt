@@ -78,25 +78,24 @@ fun SuperAdminScreen(
     onApprovedClick: () -> Unit = {},
     onAnalyticsClick: () -> Unit = {},
     onLogout: () -> Unit = {},
-    viewModel: SuperAdminViewModel = viewModel(),   // ← live data source
+    viewModel: SuperAdminViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel()
 ) {
-    // ── Live counts — update automatically when Firestore changes ─────────────
+
     val pendingCount  by viewModel.pendingCount.collectAsState()
     val approvedCount by viewModel.approvedCount.collectAsState()
     val rejectedCount by viewModel.rejectedCount.collectAsState()
 
-    // Total = ALL companies regardless of status
+
     val totalCount = pendingCount + approvedCount + rejectedCount
 
-    // Stats — labels are static, values are live
-    val stats = listOf(
+        val stats = listOf(
         StatItem("Total ISPs", totalCount.toString()),
         StatItem("Pending",    pendingCount.toString(),  Color(0xFFB7791F)),
         StatItem("Approved",   approvedCount.toString(), Color(0xFF2E7D32))
     )
 
-    // Cards — badges update live when counts change
+
     val cards = listOf(
         DashboardCardData(
             title          = "Pending Companies",
