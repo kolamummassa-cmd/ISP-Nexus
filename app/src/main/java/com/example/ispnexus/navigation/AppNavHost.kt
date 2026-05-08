@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.ispnexus.ui.theme.screens.DefaultersScreen
 import com.example.ispnexus.ui.theme.screens.FinanceDashboardScreen
 import com.example.ispnexus.ui.theme.screens.InstitutionsScreen
 import com.example.ispnexus.ui.theme.screens.InvoicesScreen
@@ -368,12 +369,11 @@ fun AppNavHost() {
         }
 
         // ── Defaulters ────────────────────────────────────────────────────────
+
         composable(DEFAULTERS) {
-            // TODO: DefaultersScreen — replace Box with DefaultersScreen() when ready
-            Box(
-                modifier         = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) { Text("Defaulters Screen — Coming Soon") }
+            DefaultersScreen(
+                onMenuClick = { navController.popBackStack() }
+            )
         }
 
         // ── Generate Invoice ──────────────────────────────────────────────────

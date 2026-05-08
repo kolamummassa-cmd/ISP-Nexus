@@ -1,6 +1,7 @@
 package com.example.ispnexus.viewmodels
 
 import androidx.lifecycle.ViewModel
+
 import androidx.lifecycle.viewModelScope
 import com.example.ispnexus.data.DefaultersRepository
 import com.example.ispnexus.models.Institution
@@ -95,21 +96,19 @@ class DefaultersViewModel : ViewModel() {
         payments: List<Payment>
     ): List<DefaulterEntry> {
         val now = System.currentTimeMillis()
+        val institutionMap = institutions.associateBy { institution: Institution -> institution.id }
 
         // Map institutionId -> last completed payment date
         val lastPaymentMap = payments
             .filter { it.status == "completed" }
             .groupBy { it.institutionId }
-            .mapValues { (_, list) -> list.maxOf { it.paidAt } }
-
-        // Map institutionId -> institution
-        val institutionMap = institutions.associateBy { it.id }
-
+            .mapValues { (_, list) ->
+                list.mapNotNull { p -> (p.paidAt as? Long) }.maxOrNull() ?: 0L
+            }
         return subscriptions
             .filter { sub ->
                 // Overdue = end date has passed and subscription is not active/resolved
-                sub.endDate > 0L &&
-                        sub.endDate < now &&
+                sub.endDate in 1..<now &&
                         sub.status != "active"
             }
             .mapNotNull { sub ->

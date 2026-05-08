@@ -2,8 +2,12 @@ package com.example.ispnexus.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.ispnexus.data.InstitutionsRepository
 import com.example.ispnexus.data.PaymentsRepository
+import com.example.ispnexus.data.SubscriptionsRepository
+import com.example.ispnexus.models.Institution
 import com.example.ispnexus.models.Payment
+import com.example.ispnexus.models.Subscription
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.*
@@ -29,9 +33,11 @@ sealed class PaymentActionState {
 
 class PaymentsViewModel : ViewModel() {
 
-    private val repository = PaymentsRepository()
-    private val db         = FirebaseFirestore.getInstance()
-    private val auth       = FirebaseAuth.getInstance()
+    private val repository              = PaymentsRepository()
+    private val institutionsRepository  = InstitutionsRepository()
+    private val subscriptionsRepository = SubscriptionsRepository()
+    private val db                      = FirebaseFirestore.getInstance()
+    private val auth                    = FirebaseAuth.getInstance()
 
     private val _state = MutableStateFlow<PaymentsUiState>(PaymentsUiState.Loading)
     val state: StateFlow<PaymentsUiState> = _state.asStateFlow()
@@ -48,19 +54,40 @@ class PaymentsViewModel : ViewModel() {
     private val _methodFilter = MutableStateFlow("all")
     val methodFilter: StateFlow<String> = _methodFilter.asStateFlow()
 
+    // ── Picker state ──────────────────────────────────────────────────────────
+    private val _institutions = MutableStateFlow<List<Institution>>(emptyList())
+    val institutions: StateFlow<List<Institution>> = _institutions.asStateFlow()
+
+    private val _subscriptionsForInstitution = MutableStateFlow<List<Subscription>>(emptyList())
+    val subscriptionsForInstitution: StateFlow<List<Subscription>> = _subscriptionsForInstitution.asStateFlow()
+
+    private val _institutionsLoading = MutableStateFlow(false)
+    val institutionsLoading: StateFlow<Boolean> = _institutionsLoading.asStateFlow()
+
+    private val _subscriptionsLoading = MutableStateFlow(false)
+    val subscriptionsLoading: StateFlow<Boolean> = _subscriptionsLoading.asStateFlow()
+
+    // cached companyId to avoid re-fetching on every action
+    private var cachedCompanyId: String = ""
+
     init { loadPayments() }
 
-    // ── Load ──────────────────────────────────────────────────────────────────
+    // ── Resolve companyId ─────────────────────────────────────────────────────
+    private suspend fun resolveCompanyId(): String? {
+        if (cachedCompanyId.isNotEmpty()) return cachedCompanyId
+        val uid = auth.currentUser?.uid ?: return null
+        val companyId = db.collection("users").document(uid)
+            .get().await().getString("companyId") ?: return null
+        cachedCompanyId = companyId
+        return companyId
+    }
+
+    // ── Load payments ─────────────────────────────────────────────────────────
     fun loadPayments() {
         viewModelScope.launch {
             _state.value = PaymentsUiState.Loading
             try {
-                val uid = auth.currentUser?.uid ?: run {
-                    _state.value = PaymentsUiState.Error("Not authenticated")
-                    return@launch
-                }
-                val userDoc   = db.collection("users").document(uid).get().await()
-                val companyId = userDoc.getString("companyId") ?: run {
+                val companyId = resolveCompanyId() ?: run {
                     _state.value = PaymentsUiState.Error("Company not found")
                     return@launch
                 }
@@ -68,12 +95,61 @@ class PaymentsViewModel : ViewModel() {
                     .catch { e -> _state.value = PaymentsUiState.Error(e.message ?: "Unknown error") }
                     .collect { list ->
                         _state.value = PaymentsUiState.Success(
-                            list.sortedByDescending { (it.createdAt as? Long) ?: 0L }                        )
+                            list.sortedByDescending { (it.createdAt as? Long) ?: 0L }
+                        )
                     }
             } catch (e: Exception) {
                 _state.value = PaymentsUiState.Error(e.message ?: "Failed to load payments")
             }
         }
+    }
+
+    // ── Load institutions for picker ──────────────────────────────────────────
+    fun loadInstitutions() {
+        viewModelScope.launch {
+            _institutionsLoading.value = true
+            try {
+                val companyId = resolveCompanyId() ?: return@launch
+                val result = institutionsRepository.getInstitutions(companyId)
+                if (result.isSuccess) {
+                    _institutions.value = result.getOrDefault(emptyList())
+                        .sortedBy { it.name }
+                }
+            } catch (e: Exception) {
+                // silently fail — picker will show empty
+            } finally {
+                _institutionsLoading.value = false
+            }
+        }
+    }
+
+    // ── Load subscriptions for a selected institution ─────────────────────────
+    fun loadSubscriptionsForInstitution(institutionId: String) {
+        if (institutionId.isEmpty()) {
+            _subscriptionsForInstitution.value = emptyList()
+            return
+        }
+        viewModelScope.launch {
+            _subscriptionsLoading.value = true
+            try {
+                val companyId = resolveCompanyId() ?: return@launch
+                val result = subscriptionsRepository.getSubscriptions(companyId)
+                if (result.isSuccess) {
+                    _subscriptionsForInstitution.value = result.getOrDefault(emptyList())
+                        .filter { it.institutionId == institutionId }
+                        .sortedBy { it.planName }
+                }
+            } catch (e: Exception) {
+                _subscriptionsForInstitution.value = emptyList()
+            } finally {
+                _subscriptionsLoading.value = false
+            }
+        }
+    }
+
+    // ── Clear subscription picker when institution changes ────────────────────
+    fun clearSubscriptions() {
+        _subscriptionsForInstitution.value = emptyList()
     }
 
     // ── Filters ───────────────────────────────────────────────────────────────
@@ -115,12 +191,7 @@ class PaymentsViewModel : ViewModel() {
     fun addPayment(payment: Payment) {
         viewModelScope.launch {
             _actionState.value = PaymentActionState.Loading
-            val uid = auth.currentUser?.uid ?: run {
-                _actionState.value = PaymentActionState.Error("Not authenticated")
-                return@launch
-            }
-            val userDoc   = db.collection("users").document(uid).get().await()
-            val companyId = userDoc.getString("companyId") ?: run {
+            val companyId = resolveCompanyId() ?: run {
                 _actionState.value = PaymentActionState.Error("Company not found")
                 return@launch
             }
