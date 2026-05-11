@@ -46,11 +46,32 @@ import com.example.ispnexus.ui.theme.screens.SubscriptionsScreen
 import com.example.ispnexus.ui.theme.screens.TechnicianDashboardScreen
 import com.example.ispnexus.ui.theme.screens.auth.RecordPaymentScreen
 import com.example.ispnexus.ui.theme.screens.auth.StaffRegisterScreen
+import com.example.ispnexus.viewmodels.UserSessionViewModel
 
 @Composable
 fun AppNavHost() {
 
     val navController = rememberNavController()
+    // At the top of AppNavHost — shared ViewModel
+    val sessionViewModel: UserSessionViewModel = viewModel()
+    val session by sessionViewModel.session.collectAsState()
+
+    val userRole     = session.role
+    val userPosition = session.position
+
+    // Helper to get redirect destination
+    fun redirectDestination(role: String, position: String): String {
+        return when (role.lowercase()) {
+            "super_admin"            -> "super_admin"
+            "admin", "company_admin" -> "admin"
+            "staff" -> when (position.lowercase()) {
+                "technician" -> "technician_dashboard"
+                "finance"    -> "finance_dashboard"
+                else         -> "staff_waiting"
+            }
+            else -> "login"
+        }
+    }
 
     NavHost(
         navController    = navController,
@@ -310,27 +331,53 @@ fun AppNavHost() {
             )
         }
 
-        // ── Plans ─────────────────────────────────────────────────────────────
-        composable(PLANS) {
-            PlansScreen(
-                onBack = { navController.popBackStack() }
-            )
+        // ── Plans (Admin only) ────────────────────────────────────────────────────────
+        composable("plans") {
+            RoleGuard(
+                allowedRoles = ScreenAccess.adminOnly,
+                userRole     = userRole,
+                userPosition = userPosition,
+                onAccessDenied = {
+                    navController.navigate(redirectDestination(userRole, userPosition)) {
+                        popUpTo("plans") { inclusive = true }
+                    }
+                }
+            ) {
+                PlansScreen(onBack = { navController.popBackStack() })
+            }
         }
 
-        // ── Institutions ──────────────────────────────────────────────────────
-        composable(INSTITUTIONS) {
-            InstitutionsScreen(
-                onBack      = { navController.popBackStack() },
-                onMenuClick = { navController.popBackStack() }
-            )
+        // ── Institutions (Admin only) ─────────────────────────────────────────────────
+        composable("institutions") {
+            RoleGuard(
+                allowedRoles   = ScreenAccess.adminOnly,
+                userRole       = userRole,
+                userPosition   = userPosition,
+                onAccessDenied = {
+                    navController.navigate(redirectDestination(userRole, userPosition)) {
+                        popUpTo("institutions") { inclusive = true }
+                    }
+                }
+            ) {
+                InstitutionsScreen(onBack = { navController.popBackStack() })
+            }
         }
 
-        // ── Subscriptions ─────────────────────────────────────────────────────
-        composable(SUBSCRIPTIONS) {
-            SubscriptionsScreen(
-                onBack      = { navController.popBackStack() },
-                onMenuClick = { navController.popBackStack() }
-            )
+
+// ── Subscriptions (Admin + Finance) ──────────────────────────────────────────
+        composable("subscriptions") {
+            RoleGuard(
+                allowedRoles   = ScreenAccess.shared,
+                userRole       = userRole,
+                userPosition   = userPosition,
+                onAccessDenied = {
+                    navController.navigate(redirectDestination(userRole, userPosition)) {
+                        popUpTo("subscriptions") { inclusive = true }
+                    }
+                }
+            ) {
+                SubscriptionsScreen(onBack = { navController.popBackStack() })
+            }
         }
 
         // ── Record Payment ────────────────────────────────────────────────────
@@ -343,9 +390,20 @@ fun AppNavHost() {
             )
         }
 
-        // ── Payments ──────────────────────────────────────────────────────────
-        composable(PAYMENTS) {
-            PaymentsScreen(onBack    = { navController.popBackStack() })
+        // ── Payments (Finance only) ───────────────────────────────────────────────────
+        composable("payments") {
+            RoleGuard(
+                allowedRoles   = ScreenAccess.financeOnly,
+                userRole       = userRole,
+                userPosition   = userPosition,
+                onAccessDenied = {
+                    navController.navigate(redirectDestination(userRole, userPosition)) {
+                        popUpTo("payments") { inclusive = true }
+                    }
+                }
+            ) {
+                PaymentsScreen(onBack = { navController.popBackStack() })
+            }
         }
 
         // ── Invoices ──────────────────────────────────────────────────────────

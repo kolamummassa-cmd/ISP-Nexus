@@ -12,5 +12,7 @@ data class Subscription(
     val status: String = "active",
     val startDate: Long = 0L,
     val endDate: Long = 0L,
-    val createdAt: Any? = null
+    val createdAt: Any? = null,
+    val lastReminderNote: String = "",
+    val lastReminderAt: Long = 0L
 )

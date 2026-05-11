@@ -693,6 +693,24 @@ private fun DefaulterCard(
                 )
             }
 
+            // Inside your defaulter card where you show subscription info
+            if (entry.subscription.lastReminderNote.isNotEmpty()) {
+                Row(
+                    verticalAlignment     = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(Icons.Outlined.NotificationsActive, null,
+                        tint = AmberText, modifier = Modifier.size(12.dp))
+                    Text(
+                        text     = "Last reminder: ${entry.subscription.lastReminderNote}",
+                        fontSize = 11.sp,
+                        color    = AmberText,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
             Spacer(Modifier.height(12.dp))
 
             // ── Action Buttons ────────────────────────────────────────────────

@@ -11,6 +11,7 @@ data class Payment(
     val paymentMethod: String = "",
     val status: String = "pending",
     val notes: String = "",
+    val billingCycle: String = "monthly",
     val paidAt: Any? = null,
     val createdAt: Any? = null
 )

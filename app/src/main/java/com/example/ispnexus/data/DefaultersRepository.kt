@@ -72,10 +72,35 @@ class DefaultersRepository {
     }
 
     // ── Mark subscription as resolved (reactivate) ────────────────────────────
+    // ── Mark subscription as resolved (reactivate + extend endDate) ───────────
     suspend fun markResolved(subscriptionId: String): Result<Unit> {
         return try {
+            // ── Fetch the subscription to get billingCycle ────────────────────
+            val subDoc = db.collection("subscriptions")
+                .document(subscriptionId)
+                .get()
+                .await()
+
+            val billingCycle = subDoc.getString("billingCycle") ?: "monthly"
+
+            // ── Calculate new endDate from today ──────────────────────────────
+            val now = System.currentTimeMillis()
+            val cal = java.util.Calendar.getInstance()
+            cal.timeInMillis = now
+            when (billingCycle) {
+                "yearly" -> cal.add(java.util.Calendar.YEAR, 1)
+                else     -> cal.add(java.util.Calendar.MONTH, 1)
+            }
+            val newEndDate = cal.timeInMillis
+
+            // ── Update status + startDate + endDate ───────────────────────────
             db.collection("subscriptions").document(subscriptionId)
-                .update("status", "active").await()
+                .update(mapOf(
+                    "status"    to "active",
+                    "startDate" to now,
+                    "endDate"   to newEndDate
+                )).await()
+
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

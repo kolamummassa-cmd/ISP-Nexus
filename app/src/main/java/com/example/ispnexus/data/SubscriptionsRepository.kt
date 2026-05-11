@@ -130,6 +130,20 @@ class SubscriptionsRepository {
     // ── Reactivate subscription ───────────────────────────────────────────────
     suspend fun reactivateSubscription(subscriptionId: String): Result<Unit> {
         return try {
+            // ── Guard: verify completed payment exists ────────────────────────
+            val paymentsSnapshot = db.collection("payments")
+                .whereEqualTo("subscriptionId", subscriptionId)
+                .whereEqualTo("status", "completed")
+                .get()
+                .await()
+
+            if (paymentsSnapshot.isEmpty) {
+                return Result.failure(
+                    Exception("Cannot reactivate — no completed payment found. Record a payment first.")
+                )
+            }
+
+            // ── Safe to reactivate ────────────────────────────────────────────
             db.collection("subscriptions").document(subscriptionId)
                 .update("status", "active").await()
             Result.success(Unit)
@@ -153,6 +167,72 @@ class SubscriptionsRepository {
     suspend fun deleteSubscription(subscriptionId: String): Result<Unit> {
         return try {
             db.collection("subscriptions").document(subscriptionId).delete().await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // ── Renew subscription (extend endDate + create payment record) ───────────────
+    suspend fun renewSubscription(subscription: Subscription, companyId: String): Result<Unit> {
+        return try {
+            val now   = System.currentTimeMillis()
+            val batch = db.batch()
+
+            // Calculate new endDate based on billing cycle
+            val cal = java.util.Calendar.getInstance()
+            cal.timeInMillis = if (subscription.endDate > now) subscription.endDate else now
+            when (subscription.billingCycle) {
+                "yearly"  -> cal.add(java.util.Calendar.YEAR, 1)
+                else      -> cal.add(java.util.Calendar.MONTH, 1)
+            }
+            val newEndDate = cal.timeInMillis
+
+            // Update subscription
+            val subRef = db.collection("subscriptions").document(subscription.id)
+            batch.update(subRef, mapOf(
+                "status"    to "active",
+                "startDate" to now,
+                "endDate"   to newEndDate
+            ))
+
+            // Auto-create payment record
+            val paymentRef  = db.collection("payments").document()
+            val invoiceRef  = db.collection("invoices").document()
+            val invoiceNum  = "INV-${java.text.SimpleDateFormat("yyyy", java.util.Locale.getDefault())
+                .format(java.util.Date(now))}-${invoiceRef.id.take(4).uppercase()}"
+
+            batch.set(paymentRef, hashMapOf(
+                "companyId"       to companyId,
+                "institutionId"   to subscription.institutionId,
+                "institutionName" to subscription.institutionName,
+                "subscriptionId"  to subscription.id,
+                "invoiceId"       to invoiceRef.id,
+                "amountKsh"       to subscription.amountKsh,
+                "paymentMethod"   to "",
+                "status"          to "pending",
+                "notes"           to "Renewal payment",
+                "paidAt"          to 0L,
+                "createdAt"       to now
+            ))
+
+            batch.set(invoiceRef, hashMapOf(
+                "invoiceNumber"   to invoiceNum,
+                "companyId"       to companyId,
+                "institutionId"   to subscription.institutionId,
+                "institutionName" to subscription.institutionName,
+                "subscriptionId"  to subscription.id,
+                "paymentId"       to paymentRef.id,
+                "amountKsh"       to subscription.amountKsh,
+                "paymentMethod"   to "",
+                "status"          to "pending",
+                "notes"           to "Renewal invoice",
+                "issuedAt"        to now,
+                "paidAt"          to 0L,
+                "createdAt"       to now
+            ))
+
+            batch.commit().await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

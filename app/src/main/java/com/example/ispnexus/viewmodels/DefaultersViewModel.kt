@@ -169,11 +169,33 @@ class DefaultersViewModel : ViewModel() {
     fun markResolved(subscriptionId: String) {
         viewModelScope.launch {
             _actionState.value = DefaulterActionState.Loading
-            val result = repository.markResolved(subscriptionId)
-            _actionState.value = when {
-                result.isSuccess -> DefaulterActionState.Success
-                else -> DefaulterActionState.Error(
-                    result.exceptionOrNull()?.message ?: "Failed to mark as resolved"
+            try {
+                // ── Guard: check completed payment exists first ────────────────
+                val paymentsSnapshot = db.collection("payments")
+                    .whereEqualTo("subscriptionId", subscriptionId)
+                    .whereEqualTo("status", "completed")
+                    .get()
+                    .await()
+
+                if (paymentsSnapshot.isEmpty) {
+                    _actionState.value = DefaulterActionState.Error(
+                        "Cannot resolve — no completed payment found for this subscription. " +
+                                "Please record a payment first."
+                    )
+                    return@launch
+                }
+
+                // ── Payment exists — proceed to resolve ───────────────────────
+                val result = repository.markResolved(subscriptionId)
+                _actionState.value = when {
+                    result.isSuccess -> DefaulterActionState.Success
+                    else -> DefaulterActionState.Error(
+                        result.exceptionOrNull()?.message ?: "Failed to mark as resolved"
+                    )
+                }
+            } catch (e: Exception) {
+                _actionState.value = DefaulterActionState.Error(
+                    e.message ?: "Failed to verify payment"
                 )
             }
         }

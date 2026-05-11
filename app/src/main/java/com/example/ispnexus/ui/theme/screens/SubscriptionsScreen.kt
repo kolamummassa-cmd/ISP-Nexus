@@ -62,7 +62,7 @@ private fun formatKsh(amount: Double): String {
 }
 
 private fun formatDate(millis: Long): String {
-    if (millis == 0L) return "—"
+    if (millis == 0L) return "-"
     return SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(millis))
 }
 
@@ -84,8 +84,9 @@ fun SubscriptionsScreen(
     var showAddDialog      by remember { mutableStateOf(false) }
     var showEditDialog     by remember { mutableStateOf(false) }
     var showDeleteDialog   by remember { mutableStateOf(false) }
-    var selectedSub        by remember { mutableStateOf<Subscription?>(null) }
 
+    var selectedSub        by remember { mutableStateOf<Subscription?>(null) }
+    var showRenewDialog    by remember { mutableStateOf(false) }
     val snackbarHostState  = remember { SnackbarHostState() }
 
     // ── Side-effects ──────────────────────────────────────────────────────────
@@ -96,6 +97,7 @@ fun SubscriptionsScreen(
                 showAddDialog    = false
                 showEditDialog   = false
                 showDeleteDialog = false
+                showRenewDialog  = false
                 selectedSub      = null
                 viewModel.resetActionState()
             }
@@ -119,8 +121,8 @@ fun SubscriptionsScreen(
                     actionIconContentColor     = Color.White
                 ),
                 navigationIcon = {
-                    IconButton(onClick = onMenuClick) {
-                        Icon(Icons.Default.Menu, contentDescription = "Menu")
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = {
@@ -357,17 +359,12 @@ fun SubscriptionsScreen(
                     items(filtered, key = { it.id }) { sub ->
                         SubscriptionCard(
                             subscription = sub,
-                            onEdit = {
-                                selectedSub    = sub
-                                showEditDialog = true
-                            },
+                            onEdit       = { selectedSub = sub; showEditDialog = true },
+                            onRenew      = { selectedSub = sub; showRenewDialog = true },
                             onSuspend    = { viewModel.suspendSubscription(sub.id) },
                             onReactivate = { viewModel.reactivateSubscription(sub.id) },
                             onExpire     = { viewModel.expireSubscription(sub.id) },
-                            onDelete = {
-                                selectedSub      = sub
-                                showDeleteDialog = true
-                            }
+                            onDelete     = { selectedSub = sub; showDeleteDialog = true }
                         )
                     }
 
@@ -443,7 +440,49 @@ fun SubscriptionsScreen(
             shape = RoundedCornerShape(16.dp)
         )
     }
+
+    // ── Renew Confirm Dialog ──────────────────────────────────────────────────
+    if (showRenewDialog && selectedSub != null) {
+        AlertDialog(
+            onDismissRequest = { showRenewDialog = false; selectedSub = null },
+            icon  = { Icon(Icons.Outlined.Autorenew, contentDescription = null, tint = NavyBlue) },
+            title = { Text("Renew Subscription", fontWeight = FontWeight.Bold) },
+            text  = {
+                val cycle = if (selectedSub?.billingCycle == "yearly") "1 year" else "1 month"
+                Text(
+                    "This will extend ${selectedSub?.institutionName}'s subscription by $cycle " +
+                            "and create a pending payment of ${
+                                NumberFormat.getNumberInstance(Locale.US)
+                                    .apply { maximumFractionDigits = 0 }
+                                    .format(selectedSub?.amountKsh ?: 0.0)
+                                    .let { "Ksh $it" }
+                            }.",
+                    fontSize = 13.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { selectedSub?.let { viewModel.renewSubscription(it) } },
+                    colors  = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                    enabled = actionState !is SubscriptionActionState.Loading
+                ) {
+                    if (actionState is SubscriptionActionState.Loading) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp),
+                            color = Color.White, strokeWidth = 2.dp)
+                    } else { Text("Renew", color = Color.White) }
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showRenewDialog = false; selectedSub = null },
+                    border  = BorderStroke(1.dp, BorderColor)
+                ) { Text("Cancel", color = TextPrimary) }
+            },
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
 }
+
 
 // ── Subscription Card ─────────────────────────────────────────────────────────
 
@@ -451,6 +490,7 @@ fun SubscriptionsScreen(
 private fun SubscriptionCard(
     subscription: Subscription,
     onEdit: () -> Unit,
+    onRenew: () -> Unit,
     onSuspend: () -> Unit,
     onReactivate: () -> Unit,
     onExpire: () -> Unit,
@@ -539,6 +579,13 @@ private fun SubscriptionCard(
                                     modifier = Modifier.size(16.dp)) },
                                 onClick = { showMenu = false; onEdit() }
                             )
+                            DropdownMenuItem(
+                                text        = { Text("Renew", fontSize = 13.sp, color = NavyBlue) },
+                                leadingIcon = { Icon(Icons.Outlined.Autorenew, null,
+                                    tint = NavyBlue, modifier = Modifier.size(16.dp)) },
+                                onClick     = { showMenu = false; onRenew() }
+                            )
+
                             if (subscription.status != "active") {
                                 DropdownMenuItem(
                                     text = { Text("Reactivate", fontSize = 13.sp, color = GreenText) },
@@ -1029,4 +1076,7 @@ private fun SubFormField(
             unfocusedContainerColor = CardBg
         )
     )
+
+    // ── Renew Confirm Dialog ──────────────────────────────────────────────────────
+
 }

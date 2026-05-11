@@ -72,7 +72,7 @@ class SubscriptionsViewModel : ViewModel() {
 
             db.collection("institutions")
                 .whereEqualTo("companyId", companyId)
-                .whereEqualTo("status", "active")
+                .whereEqualTo("status", "Active")
                 .get()
                 .await()
                 .documents
@@ -242,6 +242,29 @@ class SubscriptionsViewModel : ViewModel() {
                 result.isSuccess -> SubscriptionActionState.Success
                 else -> SubscriptionActionState.Error(
                     result.exceptionOrNull()?.message ?: "Failed to delete subscription"
+                )
+            }
+        }
+    }
+
+
+    fun renewSubscription(subscription: Subscription) {
+        viewModelScope.launch {
+            _actionState.value = SubscriptionActionState.Loading
+            val uid = auth.currentUser?.uid ?: run {
+                _actionState.value = SubscriptionActionState.Error("Not authenticated")
+                return@launch
+            }
+            val userDoc   = db.collection("users").document(uid).get().await()
+            val companyId = userDoc.getString("companyId") ?: run {
+                _actionState.value = SubscriptionActionState.Error("Company not found")
+                return@launch
+            }
+            val result = repository.renewSubscription(subscription, companyId)
+            _actionState.value = when {
+                result.isSuccess -> SubscriptionActionState.Success
+                else -> SubscriptionActionState.Error(
+                    result.exceptionOrNull()?.message ?: "Failed to renew subscription"
                 )
             }
         }
