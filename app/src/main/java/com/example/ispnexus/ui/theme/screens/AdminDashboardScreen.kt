@@ -63,16 +63,16 @@ fun AdminDashboardScreen(
     onInstitutions: () -> Unit = {},
     onSubscriptions: () -> Unit = {},
     onPlans: () -> Unit = {},
-    onPayments: () -> Unit = {},
+//    onPayments: () -> Unit = {},
     onInvoices: () -> Unit = {},
     onStaff: () -> Unit = {},
-    onTechnicians: () -> Unit = {},
-    onSupportTickets: () -> Unit = {},
-    onAnalytics: () -> Unit = {},
+//    onTechnicians: () -> Unit = {},
+//    onSupportTickets: () -> Unit = {},
+//    onAnalytics: () -> Unit = {},
     onReports: () -> Unit = {},
-    onRevenue: () -> Unit = {},
-    onCompanySettings: () -> Unit = {},
-    onProfile: () -> Unit = {},
+//    onRevenue: () -> Unit = {},
+//    onCompanySettings: () -> Unit = {},
+//    onProfile: () -> Unit = {},
     viewModel: AdminViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -117,16 +117,16 @@ fun AdminDashboardScreen(
                             onInstitutions   = onInstitutions,
                             onSubscriptions  = onSubscriptions,
                             onPlans          = onPlans,
-                            onPayments       = onPayments,
+//                            onPayments       = onPayments,
                             onInvoices       = onInvoices,
                             onStaff          = onStaff,
-                            onTechnicians    = onTechnicians,
-                            onSupportTickets = onSupportTickets,
-                            onAnalytics      = onAnalytics,
-                            onReports        = onReports,
-                            onRevenue        = onRevenue,
-                            onCompanySettings = onCompanySettings,
-                            onProfile        = onProfile
+//                            onTechnicians    = onTechnicians,
+//                            onSupportTickets = onSupportTickets,
+//                            onAnalytics      = onAnalytics,
+                            onReports        = onReports
+//                            onRevenue        = onRevenue,
+//                            onCompanySettings = onCompanySettings,
+//                            onProfile        = onProfile
                         )
                     }
                 }
@@ -138,7 +138,7 @@ fun AdminDashboardScreen(
                     onInstitutions   = onInstitutions,
                     onSubscriptions  = onSubscriptions,
                     onPlans          = onPlans,
-                    onPayments       = onPayments,
+//                    onPayments       = onPayments,
                     onStaff          = onStaff,
                     onReports        = onReports
                 )
@@ -158,7 +158,7 @@ private fun AdminDashboardContent(
     onInstitutions: () -> Unit,
     onSubscriptions: () -> Unit,
     onPlans: () -> Unit,
-    onPayments: () -> Unit,
+//    onPayments: () -> Unit,
     onStaff: () -> Unit,
     onReports: () -> Unit,
 ) {
@@ -326,8 +326,8 @@ private fun AdminDashboardContent(
                         Color(0xFFE8F5E9), ActiveGreen, onPlans)
                     QuickActionCard("Manage\nStaff", Icons.Default.Group,
                         Color(0xFFF3E5F5), PurpleAccent, onStaff)
-                    QuickActionCard("Billing\nOverview", Icons.Default.Receipt,
-                        Color(0xFFFFF8E1), PendingAmber, onPayments)
+//                    QuickActionCard("Billing\nOverview", Icons.Default.Receipt,
+//                        Color(0xFFFFF8E1), PendingAmber, onPayments)
                     QuickActionCard("View\nReports", Icons.Default.BarChart,
                         Color(0xFFE3F2FD), NavyBlue, onReports)
                 }
@@ -430,16 +430,16 @@ private fun AdminSidebarContent(
     onInstitutions: () -> Unit,
     onSubscriptions: () -> Unit,
     onPlans: () -> Unit,
-    onPayments: () -> Unit,
+//    onPayments: () -> Unit,
     onInvoices: () -> Unit,
     onStaff: () -> Unit,
-    onTechnicians: () -> Unit,
-    onSupportTickets: () -> Unit,
-    onAnalytics: () -> Unit,
+//    onTechnicians: () -> Unit,
+//    onSupportTickets: () -> Unit,
+//    onAnalytics: () -> Unit,
     onReports: () -> Unit,
-    onRevenue: () -> Unit,
-    onCompanySettings: () -> Unit,
-    onProfile: () -> Unit
+//    onRevenue: () -> Unit,
+//    onCompanySettings: () -> Unit,
+//    onProfile: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -467,23 +467,23 @@ private fun AdminSidebarContent(
             SidebarItem("Institutions",    Icons.Default.Business,           false) { onItemClick(); onInstitutions() }
             SidebarItem("Subscriptions",   Icons.Default.Subscriptions,      false) { onItemClick(); onSubscriptions() }
             SidebarItem("Plans",           Icons.Default.List,               false) { onItemClick(); onPlans() }
-            SidebarItem("Payments",        Icons.Default.Payments,           false) { onItemClick(); onPayments() }
+//            SidebarItem("Payments",        Icons.Default.Payments,           false) { onItemClick(); onPayments() }
             SidebarItem("Invoices",        Icons.Default.Receipt,            false) { onItemClick(); onInvoices() }
             SidebarItem("Staff Mgmt",      Icons.Default.Group,              false) { onItemClick(); onStaff() }
-            SidebarItem("Technicians",     Icons.Default.Engineering,        false) { onItemClick(); onTechnicians() }
-            SidebarItem("Support Tickets", Icons.Default.ConfirmationNumber, false) { onItemClick(); onSupportTickets() }
+//            SidebarItem("Technicians",     Icons.Default.Engineering,        false) { onItemClick(); onTechnicians() }
+//            SidebarItem("Support Tickets", Icons.Default.ConfirmationNumber, false) { onItemClick(); onSupportTickets() }
 
             Spacer(Modifier.height(6.dp))
             SidebarSectionLabel("REPORTS")
-            SidebarItem("Analytics", Icons.Default.Analytics,  false) { onItemClick(); onAnalytics() }
+//            SidebarItem("Analytics", Icons.Default.Analytics,  false) { onItemClick(); onAnalytics() }
             SidebarItem("Reports",   Icons.Default.BarChart,   false) { onItemClick(); onReports() }
-            SidebarItem("Revenue",   Icons.Default.TrendingUp, false) { onItemClick(); onRevenue() }
+//            SidebarItem("Revenue",   Icons.Default.TrendingUp, false) { onItemClick(); onRevenue() }
 
             Spacer(Modifier.height(6.dp))
-            SidebarSectionLabel("SETTINGS")
-            SidebarItem("Company Settings", Icons.Default.Settings, false) { onItemClick(); onCompanySettings() }
-            SidebarItem("Profile",          Icons.Default.Person,   false) { onItemClick(); onProfile() }
-            SidebarItem("Activity Logs",    Icons.Default.History,  false) { onItemClick() }
+//            SidebarSectionLabel("SETTINGS")
+//            SidebarItem("Company Settings", Icons.Default.Settings, false) { onItemClick(); onCompanySettings() }
+//            SidebarItem("Profile",          Icons.Default.Person,   false) { onItemClick(); onProfile() }
+//            SidebarItem("Activity Logs",    Icons.Default.History,  false) { onItemClick() }
         }
 
         // Logout at bottom

@@ -73,11 +73,11 @@ fun FinanceDashboardScreen(
     onNavigateToPayments: () -> Unit = {},
     onNavigateToInvoices: () -> Unit = {},
     onNavigateToReports: () -> Unit = {},
-    onNavigateToMore: () -> Unit = {},
-    onPaymentClick: (PaymentHistoryItem) -> Unit = {},
-    onRecordPayment: () -> Unit = {},
-    onGenerateInvoice: () -> Unit = {},
-    onExportReport: () -> Unit = {},
+//    onNavigateToMore: () -> Unit = {},
+//    onPaymentClick: (PaymentHistoryItem) -> Unit = {},
+//    onRecordPayment: () -> Unit = {},
+//    onGenerateInvoice: () -> Unit = {},
+//    onExportReport: () -> Unit = {},
     onViewDefaulters: () -> Unit = {},
     onViewAllPayments: () -> Unit = {},
     onViewAllDefaulters: () -> Unit = {},
@@ -106,7 +106,7 @@ fun FinanceDashboardScreen(
                         1 -> onNavigateToPayments()
                         2 -> onNavigateToInvoices()
                         3 -> onNavigateToReports()
-                        4 -> onNavigateToMore()
+//                        4 -> onNavigateToMore()
                     }
                 }
             )
@@ -133,7 +133,7 @@ fun FinanceDashboardScreen(
                 PaymentHistorySection(
                     payments       = uiState.recentPayments,
                     onViewAll      = onViewAllPayments,
-                    onPaymentClick = onPaymentClick
+//                    onPaymentClick = onPaymentClick
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 AnalyticsRow(
@@ -145,10 +145,10 @@ fun FinanceDashboardScreen(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 QuickActionsSection(
-                    onRecordPayment   = onRecordPayment,
-                    onGenerateInvoice = onGenerateInvoice,
-                    onExportReport    = onExportReport,
-                    onViewDefaulters  = onViewDefaulters
+                    onPayments       = onNavigateToPayments,
+                    onInvoices       = onNavigateToInvoices,
+                    onReports        = onNavigateToReports,
+                    onViewDefaulters = onViewDefaulters
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -416,7 +416,7 @@ private fun FinanceStatCard(
 private fun PaymentHistorySection(
     payments: List<PaymentHistoryItem>,
     onViewAll: () -> Unit,
-    onPaymentClick: (PaymentHistoryItem) -> Unit
+//    onPaymentClick: (PaymentHistoryItem) -> Unit
 ) {
     SectionCard(title = "Recent Payment History", onViewAll = onViewAll) {
         if (payments.isEmpty()) {
@@ -428,7 +428,7 @@ private fun PaymentHistorySection(
             }
         } else {
             payments.forEachIndexed { index, payment ->
-                PaymentRow(payment = payment, onClick = { onPaymentClick(payment) })
+                PaymentRow(payment = payment, onClick = {})
                 if (index < payments.lastIndex) {
                     HorizontalDivider(color = DividerColor, thickness = 0.5.dp)
                 }
@@ -656,9 +656,9 @@ private fun RevenueLineChart(points: List<RevenuePoint>, modifier: Modifier = Mo
 // ─── Quick Actions ────────────────────────────────────────────────────────────
 @Composable
 private fun QuickActionsSection(
-    onRecordPayment: () -> Unit,
-    onGenerateInvoice: () -> Unit,
-    onExportReport: () -> Unit,
+    onPayments: () -> Unit,
+    onInvoices: () -> Unit,
+    onReports: () -> Unit,
     onViewDefaulters: () -> Unit
 ) {
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -668,10 +668,10 @@ private fun QuickActionsSection(
             modifier              = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            QuickActionItem(modifier = Modifier.weight(1f), label = "Record Payment",   icon = Icons.Outlined.Receipt,      iconBg = GreenBg,  iconTint = GreenText,  onClick = onRecordPayment)
-            QuickActionItem(modifier = Modifier.weight(1f), label = "Generate Invoice", icon = Icons.Outlined.Description,  iconBg = LightBlue, iconTint = PrimaryBlue, onClick = onGenerateInvoice)
-            QuickActionItem(modifier = Modifier.weight(1f), label = "Export Report",    icon = Icons.Outlined.FileDownload, iconBg = PurpleBg, iconTint = PurpleText, onClick = onExportReport)
-            QuickActionItem(modifier = Modifier.weight(1f), label = "View Defaulters",  icon = Icons.Outlined.Group,        iconBg = AmberBg,  iconTint = AmberText,  onClick = onViewDefaulters)
+            QuickActionItem(modifier = Modifier.weight(1f), label = "Payments",      icon = Icons.Outlined.AttachMoney,  iconBg = GreenBg,  iconTint = GreenText,   onClick = onPayments)
+            QuickActionItem(modifier = Modifier.weight(1f), label = "Invoices",      icon = Icons.Outlined.Description,  iconBg = LightBlue, iconTint = PrimaryBlue, onClick = onInvoices)
+            QuickActionItem(modifier = Modifier.weight(1f), label = "Reports",       icon = Icons.Outlined.BarChart,     iconBg = PurpleBg, iconTint = PurpleText,  onClick = onReports)
+            QuickActionItem(modifier = Modifier.weight(1f), label = "Defaulters",    icon = Icons.Outlined.Group,        iconBg = AmberBg,  iconTint = AmberText,   onClick = onViewDefaulters)
         }
     }
 }

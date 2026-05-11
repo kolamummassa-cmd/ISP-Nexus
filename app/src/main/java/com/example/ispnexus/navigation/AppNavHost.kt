@@ -229,16 +229,16 @@ fun AppNavHost() {
                             onInstitutions    = { navController.navigate(INSTITUTIONS) },
                             onSubscriptions   = { navController.navigate(SUBSCRIPTIONS) },
                             onPlans           = { navController.navigate(PLANS) },
-                            onPayments        = { navController.navigate(PAYMENTS) },
+//                            onPayments        = { navController.navigate(PAYMENTS) },
                             onInvoices        = { navController.navigate(INVOICES) },
                             onStaff           = { navController.navigate(STAFF) },
-                            onTechnicians     = { navController.navigate("technicians") },
-                            onSupportTickets  = { navController.navigate("tickets") },
-                            onAnalytics       = { navController.navigate("analytics") },
+//                            onTechnicians     = { navController.navigate("technicians") },
+//                            onSupportTickets  = { navController.navigate("tickets") },
+//                            onAnalytics       = { navController.navigate("analytics") },
                             onReports         = { navController.navigate(REPORTS) },
-                            onRevenue         = { navController.navigate("revenue") },
-                            onCompanySettings = { navController.navigate("company_settings") },
-                            onProfile         = { navController.navigate("profile") }
+//                            onRevenue         = { navController.navigate("revenue") },
+//                            onCompanySettings = { navController.navigate("company_settings") },
+//                            onProfile         = { navController.navigate("profile") }
                         )
                     } else {
                         PendingApprovalScreen(
@@ -317,93 +317,49 @@ fun AppNavHost() {
                 onNavigateToPayments  = { navController.navigate(PAYMENTS) },
                 onNavigateToInvoices  = { navController.navigate(INVOICES) },
                 onNavigateToReports   = { navController.navigate(REPORTS) },
-                onNavigateToMore      = { navController.navigate(MORE) },
+//                onNavigateToMore      = { navController.navigate(MORE) },
                 onBack                = { navController.popBackStack() },
-                onPaymentClick        = { payment ->
-                    navController.navigate("payment_detail/${payment.id}")
-                },
+//                onPaymentClick        = { payment ->
+//                    navController.navigate("payment_detail/${payment.id}")
+//                },
                 onViewAllPayments     = { navController.navigate(PAYMENTS) },
                 onViewAllDefaulters   = { navController.navigate(DEFAULTERS) },
-                onRecordPayment       = { navController.navigate(RECORD_PAYMENT) },
-                onGenerateInvoice     = { navController.navigate(GENERATE_INVOICE) },
-                onExportReport        = { navController.navigate(EXPORT_REPORT) },
+//                onRecordPayment       = { navController.navigate(RECORD_PAYMENT) },
+//                onGenerateInvoice     = { navController.navigate(GENERATE_INVOICE) },
+//                onExportReport        = { navController.navigate(EXPORT_REPORT) },
                 onViewDefaulters      = { navController.navigate(DEFAULTERS) }
             )
         }
 
         // ── Plans (Admin only) ────────────────────────────────────────────────────────
         composable("plans") {
-            RoleGuard(
-                allowedRoles = ScreenAccess.adminOnly,
-                userRole     = userRole,
-                userPosition = userPosition,
-                onAccessDenied = {
-                    navController.navigate(redirectDestination(userRole, userPosition)) {
-                        popUpTo("plans") { inclusive = true }
-                    }
-                }
-            ) {
-                PlansScreen(onBack = { navController.popBackStack() })
-            }
+            PlansScreen(onBack = { navController.popBackStack() })
         }
 
         // ── Institutions (Admin only) ─────────────────────────────────────────────────
         composable("institutions") {
-            RoleGuard(
-                allowedRoles   = ScreenAccess.adminOnly,
-                userRole       = userRole,
-                userPosition   = userPosition,
-                onAccessDenied = {
-                    navController.navigate(redirectDestination(userRole, userPosition)) {
-                        popUpTo("institutions") { inclusive = true }
-                    }
-                }
-            ) {
-                InstitutionsScreen(onBack = { navController.popBackStack() })
-            }
+            InstitutionsScreen(onBack = { navController.popBackStack() })
         }
 
 
 // ── Subscriptions (Admin + Finance) ──────────────────────────────────────────
         composable("subscriptions") {
-            RoleGuard(
-                allowedRoles   = ScreenAccess.shared,
-                userRole       = userRole,
-                userPosition   = userPosition,
-                onAccessDenied = {
-                    navController.navigate(redirectDestination(userRole, userPosition)) {
-                        popUpTo("subscriptions") { inclusive = true }
-                    }
-                }
-            ) {
-                SubscriptionsScreen(onBack = { navController.popBackStack() })
-            }
+            SubscriptionsScreen(onBack = { navController.popBackStack() })
         }
 
         // ── Record Payment ────────────────────────────────────────────────────
-        composable(RECORD_PAYMENT) {
-            RecordPaymentScreen(
-                onBack    = { navController.popBackStack() },
-                onSuccess = {
-                    navController.popBackStack()   // goes back to Finance Dashboard
-                }
-            )
-        }
+//        composable(RECORD_PAYMENT) {
+//            RecordPaymentScreen(
+//                onBack    = { navController.popBackStack() },
+//                onSuccess = {
+//                    navController.popBackStack()   // goes back to Finance Dashboard
+//                }
+//            )
+//        }
 
         // ── Payments (Finance only) ───────────────────────────────────────────────────
         composable("payments") {
-            RoleGuard(
-                allowedRoles   = ScreenAccess.financeOnly,
-                userRole       = userRole,
-                userPosition   = userPosition,
-                onAccessDenied = {
-                    navController.navigate(redirectDestination(userRole, userPosition)) {
-                        popUpTo("payments") { inclusive = true }
-                    }
-                }
-            ) {
-                PaymentsScreen(onBack = { navController.popBackStack() })
-            }
+            PaymentsScreen(onBack = { navController.popBackStack() })
         }
 
         // ── Invoices ──────────────────────────────────────────────────────────
@@ -436,20 +392,12 @@ fun AppNavHost() {
 
         // ── Generate Invoice ──────────────────────────────────────────────────
         composable(GENERATE_INVOICE) {
-            // TODO: GenerateInvoiceScreen — replace Box when ready
-            Box(
-                modifier         = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) { Text("Generate Invoice — Coming Soon") }
+            InvoicesScreen(onBack = { navController.popBackStack() })
         }
 
         // ── Export Report ─────────────────────────────────────────────────────
         composable(EXPORT_REPORT) {
-            // TODO: ExportReportScreen — replace Box when ready
-            Box(
-                modifier         = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) { Text("Export Report — Coming Soon") }
+            ReportsScreen(onBack = { navController.popBackStack() })
         }
 
         // ── Payment Detail ────────────────────────────────────────────────────

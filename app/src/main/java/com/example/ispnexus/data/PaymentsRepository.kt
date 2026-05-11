@@ -115,11 +115,8 @@ class PaymentsRepository {
                     "yearly" -> now + (365L * 24 * 60 * 60 * 1000)
                     else     -> now + (30L  * 24 * 60 * 60 * 1000)
                 },
-                paidAt = when {
-                    status == "completed" && payment?.paidAt == 0L -> System.currentTimeMillis() // newly completed
-                    status == "completed" && payment?.paidAt != 0L -> payment.paidAt             // already had paidAt
-                    else                                           -> 0L                          // pending or failed
-                },                "notes"           to payment.notes,
+                "paidAt" to if (payment.status == "completed") payment.paidAt else 0L,
+                "notes"           to payment.notes,
                 "createdAt"       to now
             )
 
