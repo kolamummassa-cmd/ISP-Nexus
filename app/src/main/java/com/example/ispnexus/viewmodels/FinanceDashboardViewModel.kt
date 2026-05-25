@@ -35,42 +35,36 @@ data class RevenuePoint(
 )
 
 data class FinanceDashboardUiState(
-    val officerName: String = "Finance Officer",
+    val officerName: String = "",
     val companyName: String = "",
-    val notificationCount: Int = 3,
+    val companyLogoUrl: String = "",
+    val notificationCount: Int = 0,
 
-    // Stats
-    val totalRevenue: Double = 28450.00,
-    val totalRevenueChange: Double = 12.5,
-    val pendingPayments: Double = 6320.00,
-    val pendingInvoiceCount: Int = 12,
-    val pendingPaymentsChange: Double = 8.3,
-    val defaultersCount: Int = 8,
-    val newDefaulters: Int = 3,
-    val paidToday: Double = 2150.00,
-    val paidTodayCount: Int = 5,
-    val paidTodayChange: Double = 15.2,
+    // Stats — all zeroed out
+    val totalRevenue: Double = 0.0,
+    val totalRevenueChange: Double = 0.0,
+    val pendingPayments: Double = 0.0,
+    val pendingInvoiceCount: Int = 0,
+    val pendingPaymentsChange: Double = 0.0,
+    val defaultersCount: Int = 0,
+    val newDefaulters: Int = 0,
+    val paidToday: Double = 0.0,
+    val paidTodayCount: Int = 0,
+    val paidTodayChange: Double = 0.0,
 
-    // Payment History
     val recentPayments: List<PaymentHistoryItem> = emptyList(),
-
-    // Revenue Chart
     val revenuePoints: List<RevenuePoint> = emptyList(),
-
-    // Defaulters
     val topDefaulters: List<DefaulterItem> = emptyList(),
 
     val isLoading: Boolean = false,
-    val errorMessage: String? = null,
-    val companyLogoUrl: String,
-
-    ) {
+    val errorMessage: String? = null
+) {
 //    val companyLogoUrl: String = ""
 }
 
 class FinanceDashboardViewModel : ViewModel() {
 
-    private val _uiState = MutableStateFlow(FinanceDashboardUiState(companyLogoUrl = ""))
+    private val _uiState = MutableStateFlow(FinanceDashboardUiState())
     val uiState: StateFlow<FinanceDashboardUiState> = _uiState.asStateFlow()
 
     init {
@@ -88,6 +82,10 @@ class FinanceDashboardViewModel : ViewModel() {
                 val userDoc     = db.collection("users").document(uid).get().await()
                 val officerName = userDoc.getString("fullName") ?: "Finance Officer"
                 val companyId   = userDoc.getString("companyId") ?: return@launch
+
+                android.util.Log.d("FinanceVM", "Current UID = $uid")
+                android.util.Log.d("FinanceVM", "fullName = ${userDoc.getString("fullName")}")
+                android.util.Log.d("FinanceVM", "companyId = ${userDoc.getString("companyId")}")
 
                 // Fetch company name
                 val companyDoc  = db.collection("companies").document(companyId).get().await()
@@ -185,9 +183,10 @@ class FinanceDashboardViewModel : ViewModel() {
                     revenuePoints       = revenuePoints,
                     topDefaulters       = defaulters
                 )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false)
-            }
+            }  catch (e: Exception) {
+            android.util.Log.e("FinanceVM", "Error: ${e.message}")
+            _uiState.value = _uiState.value.copy(isLoading = false)
+        }
         }
     }
 
